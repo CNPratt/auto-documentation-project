@@ -172,7 +172,7 @@ const parseDocumentation = async (sourceCode) => {
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
-  const apiKey = "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";
+  const apiKey = "API_KEY_HERE";
   const endpoint = "https://api.openai.com/v1/chat/completions";
 
   const requestBody = JSON.stringify({
