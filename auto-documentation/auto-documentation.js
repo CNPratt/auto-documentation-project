@@ -35,49 +35,56 @@ const createComponentObject = (name, node) => {
   return componentObject;
 };
 
+const createComponentObjectIfReturnsJSX = (name, node, componentsArray) => {
+  // Traverse the AST node and check if it has a JSX expression
+  let hasJSX = false;
+  babelTraverse.default(node, {
+    JSXElement() {
+      hasJSX = true;
+    },
+    JSXFragment() {
+      hasJSX = true;
+    },
+    noScope: true,
+  });
+
+  if (hasJSX) {
+    const componentObject = createComponentObject(name, node);
+    componentsArray.push(componentObject);
+  }
+};
+
 const assembleComponents = (ast) => {
   const components = [];
 
   babelTraverse.default(ast, {
     FunctionDeclaration(path) {
-      // This function is called for each FunctionDeclaration node in the AST
-      // console.log("FunctionDeclaration:", path.node.id.name);
-
-      const componentObject = createComponentObject(
+      createComponentObjectIfReturnsJSX(
         path.node.id.name,
-        path.node
+        path.node,
+        components
       );
-
-      components.push(componentObject);
     },
 
     VariableDeclaration(path) {
-      // Check if it's a variable declaration with an arrow function
-      // console.log("VariableDeclaration:", path.node.declarations[0].id.name);
-
       if (
         path.node.declarations[0].init &&
         path.node.declarations[0].init.type === "ArrowFunctionExpression"
       ) {
-        const componentObject = createComponentObject(
+        createComponentObjectIfReturnsJSX(
           path.node.declarations[0].id.name,
-          path.node
+          path.node.declarations[0].init,
+          components
         );
-
-        // Push it to the functions array
-        components.push(componentObject);
       }
     },
 
     ClassDeclaration(path) {
-      // This function is called for each ClassDeclaration node in the AST
-      // console.log("ClassDeclaration:", path.node.id.name);
-      const componentObject = createComponentObject(
+      createComponentObjectIfReturnsJSX(
         path.node.id.name,
-        path.node
+        path.node,
+        components
       );
-
-      components.push(componentObject);
     },
   });
 
@@ -152,6 +159,50 @@ const parseVariables = (sourceCode, documentation) => {
   // Check if the source code contains any of the variable declaration regexes in the variableRegexArray
 };
 
+// Define the new function
+const promptUserForAPI = async (documentation, componentCode) => {
+  let counter = 0;
+  let shouldContinue = false;
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  while (!shouldContinue) {
+    const originalQuestion = `Make API call for file ${documentation.component}? (yes/no) `;
+    const regenerateQuestion = `Make another API call for file ${documentation.component}? (yes/no) `;
+    const question = counter === 0 ? originalQuestion : regenerateQuestion;
+    counter++;
+
+    // Ask the user if they want to make the API call for this file
+    const makeApiCall = await new Promise((resolve) => {
+      rl.question(question, (answer) => {
+        resolve(answer.toLowerCase() === "yes");
+      });
+    });
+    if (makeApiCall) {
+      documentation.description = await getComponentDescription(componentCode);
+
+      const shouldSave = await new Promise((resolve) => {
+        rl.question(
+          `Would you like to save the description? (yes/no) `,
+          (answer) => {
+            resolve(answer.toLowerCase() === "yes");
+          }
+        );
+      });
+
+      shouldContinue = shouldSave;
+    } else {
+      documentation.description = "This is a test description";
+      shouldContinue = true;
+    }
+  }
+
+  rl.close();
+};
+
 const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   // Get the component code for description generation
   const componentCode = `${prefaceStatement}: ${documentation.component}\n${sourceCode}`;
@@ -159,54 +210,13 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   console.log("Getting description for component:", documentation.component);
 
   if (useOpenAI) {
-    rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
     try {
-      counter = 0;
-      let shouldContinue = false;
-
-      while (!shouldContinue) {
-        const originalQuestion = `Make API call for file ${documentation.component}? (yes/no) `;
-        const regenerateQuestion = `Make another API call for file ${documentation.component}? (yes/no) `;
-        const question = counter === 0 ? originalQuestion : regenerateQuestion;
-        counter++;
-
-        // Ask the user if they want to make the API call for this file
-        const makeApiCall = await new Promise((resolve) => {
-          rl.question(question, (answer) => {
-            resolve(answer.toLowerCase() === "yes");
-          });
-        });
-        if (makeApiCall) {
-          documentation.description = await getComponentDescription(
-            componentCode
-          );
-
-          const shouldSave = await new Promise((resolve) => {
-            rl.question(
-              `Would you like to save the description? (yes/no) `,
-              (answer) => {
-                resolve(answer.toLowerCase() === "yes");
-              }
-            );
-          });
-
-          shouldContinue = shouldSave;
-        } else {
-          documentation.description = "This is a test description";
-          shouldContinue = true;
-        }
-      }
+      await promptUserForAPI(documentation, componentCode);
     } catch (error) {
       console.error("Error fetching description:", error.message);
       // In case of an error, set description to an empty string
       documentation.description = "";
     }
-
-    rl.close();
   } else {
     documentation.description = "This is a test description";
   }
