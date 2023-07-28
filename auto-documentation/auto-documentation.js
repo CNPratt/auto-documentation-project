@@ -293,7 +293,7 @@ const getDocumentation = async (files) => {
 
   for (const file of files) {
     console.log(`Getting documentation for ${file}`);
-    if (file.endsWith(".js") && file.includes("Screen")) {
+    if (file.endsWith(".js")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");
 
