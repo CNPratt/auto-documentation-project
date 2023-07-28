@@ -1,28 +1,102 @@
-const componentRegexArrayFile = require("./regex-arrays/component-regex-array");
-const functionRegexArrayFile = require("./regex-arrays/function-regex-array");
-const variableRegexArrayFile = require("./regex-arrays/variable-regex-array");
 const getHash = require("./utils/getHash");
-
-const componentRegexArray = componentRegexArrayFile.componentRegexArray;
-const functionRegexArray = functionRegexArrayFile.functionRegexArray;
-const variableRegexArray = variableRegexArrayFile.variableRegexArray;
+const logAst = require("./utils/logAst");
 
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
 const util = require("util");
+const readline = require("readline");
+
+const babelCore = require("@babel/core");
+const babelTypes = require("@babel/types");
+const babelParser = require("@babel/parser");
+const babelTraverse = require("@babel/traverse");
+const generator = require("@babel/generator").default;
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 let updatedComponents = [];
 
 // Boolean to control whether to use calls to the OpenAI API to generate descriptions
-const useOpenAI = false;
+const useOpenAI = true;
 
 // Descriptive statement added to the beginning of the OpenAI prompt
 const prefaceStatement =
-  "Please provide detailed documentation for the following React component code:";
+  "Please provide a high level overview of purpose and functionality for the following React component code in 300 or less characters:";
 
 // This is the path connector between where we are running this file and where this program should look for files
-const relativeDirectoryConnector = "../scripts";
+const relativeDirectoryConnector = "../../../iforager_react_native/scripts";
+
+const assembleComponents = (ast) => {
+  const components = [];
+
+  babelTraverse.default(ast, {
+    FunctionDeclaration(path) {
+      // This function is called for each FunctionDeclaration node in the AST
+      // console.log("FunctionDeclaration:", path.node.id.name);
+
+      const componentObject = {
+        name: path.node.id.name,
+        code: getComponentCode(path.node),
+      };
+
+      components.push(componentObject);
+    },
+
+    VariableDeclaration(path) {
+      // Check if it's a variable declaration with an arrow function
+      // console.log("VariableDeclaration:", path.node.declarations[0].id.name);
+
+      if (
+        path.node.declarations[0].init &&
+        path.node.declarations[0].init.type === "ArrowFunctionExpression"
+      ) {
+        const componentObject = {
+          name: path.node.declarations[0].id.name,
+          code: getComponentCode(path.node),
+        };
+
+        // Push it to the functions array
+        components.push(componentObject);
+      }
+    },
+
+    ClassDeclaration(path) {
+      // This function is called for each ClassDeclaration node in the AST
+      // console.log("ClassDeclaration:", path.node.id.name);
+      const componentObject = {
+        name: path.node.id.name,
+        code: getComponentCode(path.node),
+      };
+
+      components.push(componentObject);
+    },
+  });
+
+  return components;
+};
+
+const createAstFromComponentNode = (node) => {
+  // Create a new AST from the node
+  const constructedAst = babelTypes.file(
+    babelTypes.program([node], [], "module"),
+    [],
+    []
+  );
+
+  return constructedAst;
+};
+
+const getComponentCode = (node) => {
+  // Since we are receiving partial ASTs, we need to construct a full AST for each component
+  const constructedAst = createAstFromComponentNode(node);
+
+  // Generate the code from the new AST
+  return generator(constructedAst).code;
+};
 
 const getFiles = async (dir, baseDir = null) => {
   console.log("Getting files");
@@ -65,54 +139,6 @@ const findDocumentationObject = (componentName) => {
   return matchingObject;
 };
 
-const isComponent = (sourceCode) => {
-  // Check if the source code contains any of the component declaration regexes in the componentRegexArray
-  for (const regex of componentRegexArray) {
-    regex.lastIndex = 0; // Reset the lastIndex before each execution
-    if (regex.test(sourceCode)) {
-      return true;
-    }
-  }
-
-  return false;
-};
-
-const extractComponentName = (sourceCode) => {
-  // Check if the source code contains any of the component or variable declaration regexes in the componentRegexArray
-  for (const regex of componentRegexArray) {
-    regex.lastIndex = 0; // Reset the lastIndex before each execution
-    const match = regex.exec(sourceCode);
-
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-
-  return null; // Return null if no component name is found
-};
-
-const checkForChanges = (sourceCode, documentation) => {
-  if (documentation.component) {
-    // Encode and set the source code using a SHA265 hash to check against for changes
-    const encodedSourceCode = getHash(sourceCode);
-    documentation.encodedSourceCode = encodedSourceCode;
-
-    const matchedObject = findDocumentationObject(documentation.component);
-
-    // If the encoded source code matches the encoded source code in the documentation object, return the documentation object
-    if (
-      matchedObject &&
-      matchedObject.encodedSourceCode === encodedSourceCode
-    ) {
-      return matchedObject;
-    }
-
-    // If the encoded source code does not match the encoded source code in the documentation object, continue with parsing
-    // and add the component name to the list of updated components
-    updatedComponents.push(documentation.component);
-  }
-};
-
 const parseFunctions = (sourceCode, documentation) => {
   // Check if the source code contains any of the function declaration regexes in the functionRegexArray
 };
@@ -129,7 +155,22 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
 
   if (useOpenAI) {
     try {
-      documentation.description = await getComponentDescription(componentCode);
+      // Ask the user if they want to make the API call for this file
+      const makeApiCall = await new Promise((resolve) => {
+        rl.question(
+          `Make API call for file ${documentation.component}? (yes/no) `,
+          (answer) => {
+            resolve(answer.toLowerCase() === "yes");
+          }
+        );
+      });
+      if (makeApiCall) {
+        documentation.description = await getComponentDescription(
+          componentCode
+        );
+      } else {
+        documentation.description = "This is a test description";
+      }
     } catch (error) {
       console.error("Error fetching description:", error.message);
       // In case of an error, set description to an empty string
@@ -140,39 +181,35 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   }
 };
 
-const parseDocumentation = async (sourceCode) => {
+const parseComponentObjects = async (componentObject) => {
   const documentation = {
-    component: "",
+    component: componentObject.name,
     variables: [],
     functions: [],
     description: "",
+    sourceCodeHash: getHash(componentObject.code),
   };
 
-  if (isComponent(sourceCode)) {
-    // Extract component name from the source code
-    const componentName = extractComponentName(sourceCode);
+  // Check if there is a matching object in the previously generated documentationz
+  const matchedObject = findDocumentationObject(documentation.component);
 
-    // If the component name is found, add it to the documentation object
-    // Check if the first letter of the component name is capitalized, which indicates that it is a React component
-    // If the first letter is not capitalized, it is a regular JavaScript variable and will not be included in the documentation
-    if (componentName && componentName[0] === componentName[0].toUpperCase()) {
-      documentation.component = componentName;
-
-      const unchangedObject = checkForChanges(sourceCode, documentation);
-
-      // If the source code has not changed, return the unchanged object
-      // If the source code has changed, unchangedObject will be undefined and we will continue with parsing
-      if (unchangedObject) {
-        return unchangedObject;
-      }
-
-      // Parsing functions and variables should go here
-
-      // Get the description from the OpenAI API
-      await getDescriptionFromAPI(documentation, sourceCode, useOpenAI);
-    }
+  // If a matching object was found and the encoded source code matches the encoded source code
+  // in the documentation object, return the previous documentation object early
+  if (
+    matchedObject &&
+    matchedObject.sourceCodeHash === documentation.sourceCodeHash
+  ) {
+    return matchedObject;
   }
 
+  // If the encoded source code does not match the encoded source code in the documentation object, continue with parsing
+  // and add the component name to the list of updated components
+  updatedComponents.push(documentation.component);
+
+  // Parsing functions and variables should go here
+
+  // Get the description from the OpenAI API
+  await getDescriptionFromAPI(documentation, componentObject.code, useOpenAI);
   return documentation;
 };
 
@@ -229,23 +266,49 @@ const getComponentDescription = async (componentCode) => {
   });
 };
 
+const getFileDocumentation = async (fileComponentObjects, masterDocument) => {
+  // Parse the documentation for each component in the file
+  for (const componentObject of fileComponentObjects) {
+    try {
+      const parsedDocumentation = await parseComponentObjects(componentObject);
+      // if (parsedDocumentation.component) {
+      console.log(parsedDocumentation);
+      masterDocument.push(parsedDocumentation);
+      // }
+    } catch (error) {
+      console.error(
+        `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
+      );
+    }
+  }
+};
+
 const getDocumentation = async (files) => {
   console.log("Getting documentation");
 
   // Clear the updated components array
   updatedComponents = [];
 
-  const documentation = [];
+  const masterDocument = [];
+
   for (const file of files) {
     console.log(`Getting documentation for ${file}`);
-    if (file.endsWith(".js")) {
+    if (file.endsWith(".js") && file.includes("Screen")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");
 
-        const parsedDocumentation = await parseDocumentation(sourceCode);
-        if (parsedDocumentation.component) {
-          documentation.push(parsedDocumentation);
-        }
+        // Generate an AST from the source code
+        const ast = babelParser.parse(sourceCode, {
+          sourceType: "module",
+          plugins: ["jsx"],
+        });
+
+        // Log the AST to the console
+        // logAst(ast);
+
+        const fileComponentObjects = assembleComponents(ast);
+
+        await getFileDocumentation(fileComponentObjects, masterDocument);
       } catch (error) {
         console.error(
           `Error reading or parsing ${file}. Error: ${error.message}`
@@ -253,7 +316,7 @@ const getDocumentation = async (files) => {
       }
     }
   }
-  return documentation;
+  return masterDocument;
 };
 
 const generateDocumentation = async () => {
