@@ -165,36 +165,39 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
     });
 
     try {
-      let satisfiedWithDescription = false;
+      counter = 0;
+      let shouldContinue = false;
 
-      while (!satisfiedWithDescription) {
+      while (!shouldContinue) {
+        const originalQuestion = `Make API call for file ${documentation.component}? (yes/no) `;
+        const regenerateQuestion = `Make another API call for file ${documentation.component}? (yes/no) `;
+        const question = counter === 0 ? originalQuestion : regenerateQuestion;
+        counter++;
+
         // Ask the user if they want to make the API call for this file
         const makeApiCall = await new Promise((resolve) => {
-          rl.question(
-            `Make API call for file ${documentation.component}? (yes/no) `,
-            (answer) => {
-              resolve(answer.toLowerCase() === "yes");
-            }
-          );
+          rl.question(question, (answer) => {
+            resolve(answer.toLowerCase() === "yes");
+          });
         });
         if (makeApiCall) {
           documentation.description = await getComponentDescription(
             componentCode
           );
 
-          const isSatisfied = await new Promise((resolve) => {
+          const shouldSave = await new Promise((resolve) => {
             rl.question(
-              `Are you satisfied with the description? (yes/no) `,
+              `Would you like to save the description? (yes/no) `,
               (answer) => {
                 resolve(answer.toLowerCase() === "yes");
               }
             );
           });
 
-          satisfiedWithDescription = isSatisfied;
+          shouldContinue = shouldSave;
         } else {
           documentation.description = "This is a test description";
-          satisfiedWithDescription = true;
+          shouldContinue = true;
         }
       }
     } catch (error) {
@@ -323,7 +326,7 @@ const getDocumentation = async (files) => {
 
   for (const file of files) {
     console.log(`Getting documentation for ${file}`);
-    if (file.endsWith(".js") && file.includes("Screen")) {
+    if (file.endsWith(".js")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");
 
