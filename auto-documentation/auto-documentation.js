@@ -1,6 +1,7 @@
 const componentRegexArrayFile = require("./regex-arrays/component-regex-array");
 const functionRegexArrayFile = require("./regex-arrays/function-regex-array");
 const variableRegexArrayFile = require("./regex-arrays/variable-regex-array");
+const getHash = require("./utils/getHash");
 
 const componentRegexArray = componentRegexArrayFile.componentRegexArray;
 const functionRegexArray = functionRegexArrayFile.functionRegexArray;
@@ -17,7 +18,7 @@ let updatedComponents = [];
 const useOpenAI = false;
 
 // This is the path connector between where we are running this file and where this program should look for files
-const relativeDirectoryConnector = "../src/components";
+const relativeDirectoryConnector = "../scripts";
 
 const getFiles = async (dir, baseDir = null) => {
   console.log("Getting files");
@@ -63,6 +64,7 @@ const findDocumentationObject = (componentName) => {
 const isComponent = (sourceCode) => {
   // Check if the source code contains any of the component declaration regexes in the componentRegexArray
   for (const regex of componentRegexArray) {
+    regex.lastIndex = 0; // Reset the lastIndex before each execution
     if (regex.test(sourceCode)) {
       return true;
     }
@@ -85,15 +87,10 @@ const extractComponentName = (sourceCode) => {
   return null; // Return null if no component name is found
 };
 
-const getEncodedSourceCode = (sourceCode) => {
-  const encodedSourceCode = Buffer.from(sourceCode).toString("base64");
-  return encodedSourceCode;
-};
-
 const checkForChanges = (sourceCode, documentation) => {
   if (documentation.component) {
-    // Encode and set the source code in base64 to check against for changes
-    const encodedSourceCode = getEncodedSourceCode(sourceCode);
+    // Encode and set the source code using a SHA265 hash to check against for changes
+    const encodedSourceCode = getHash(sourceCode);
     documentation.encodedSourceCode = encodedSourceCode;
 
     const matchedObject = findDocumentationObject(documentation.component);
@@ -120,6 +117,25 @@ const parseVariables = (sourceCode, documentation) => {
   // Check if the source code contains any of the variable declaration regexes in the variableRegexArray
 };
 
+const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
+  // Get the component code for description generation
+  const componentCode = `Please generate a description of the following React component, in the style of professional React code documentation: ${documentation.component}\n${sourceCode}`;
+
+  console.log("Getting description for component:", documentation.component);
+
+  if (useOpenAI) {
+    try {
+      documentation.description = await getComponentDescription(componentCode);
+    } catch (error) {
+      console.error("Error fetching description:", error.message);
+      // In case of an error, set description to an empty string
+      documentation.description = "";
+    }
+  } else {
+    documentation.description = "This is a test description";
+  }
+};
+
 const parseDocumentation = async (sourceCode) => {
   const documentation = {
     component: "",
@@ -137,33 +153,19 @@ const parseDocumentation = async (sourceCode) => {
     // If the first letter is not capitalized, it is a regular JavaScript variable and will not be included in the documentation
     if (componentName && componentName[0] === componentName[0].toUpperCase()) {
       documentation.component = componentName;
-    }
 
-    const unchangedObject = checkForChanges(sourceCode, documentation);
+      const unchangedObject = checkForChanges(sourceCode, documentation);
 
-    // If the source code has not changed, return the unchanged object
-    // If the source code has changed, unchangedObject will be undefined and we will continue with parsing
-    if (unchangedObject) {
-      return unchangedObject;
-    }
-
-    // Parsing functions and variables should go here
-
-    // Get description from ChatGPT API
-    const componentCode = `Please generate a description of the following React component, limited to 300 characters, in the style of professional React code documentation: ${documentation.component}\n${sourceCode}`;
-
-    if (useOpenAI) {
-      try {
-        documentation.description = await getComponentDescription(
-          componentCode
-        );
-      } catch (error) {
-        console.error("Error fetching description:", error.message);
-        // In case of an error, set description to an empty string
-        documentation.description = "";
+      // If the source code has not changed, return the unchanged object
+      // If the source code has changed, unchangedObject will be undefined and we will continue with parsing
+      if (unchangedObject) {
+        return unchangedObject;
       }
-    } else {
-      documentation.description = "This is a test description";
+
+      // Parsing functions and variables should go here
+
+      // Get the description from the OpenAI API
+      await getDescriptionFromAPI(documentation, sourceCode, useOpenAI);
     }
   }
 
@@ -172,7 +174,7 @@ const parseDocumentation = async (sourceCode) => {
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
-  const apiKey = "API_KEY_HERE";
+  const apiKey = "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";
   const endpoint = "https://api.openai.com/v1/chat/completions";
 
   const requestBody = JSON.stringify({
