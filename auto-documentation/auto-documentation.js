@@ -11,12 +11,8 @@ const babelCore = require("@babel/core");
 const babelTypes = require("@babel/types");
 const babelParser = require("@babel/parser");
 const babelTraverse = require("@babel/traverse");
+const { create } = require("domain");
 const generator = require("@babel/generator").default;
-
-// const rl = readline.createInterface({
-//   input: process.stdin,
-//   output: process.stdout,
-// });
 
 let updatedComponents = [];
 
@@ -30,6 +26,15 @@ const prefaceStatement =
 // This is the path connector between where we are running this file and where this program should look for files
 const relativeDirectoryConnector = "../../../iforager_react_native/scripts";
 
+const createComponentObject = (name, node) => {
+  const componentObject = {
+    name: name,
+    code: getComponentCodeFromNode(node),
+  };
+
+  return componentObject;
+};
+
 const assembleComponents = (ast) => {
   const components = [];
 
@@ -38,10 +43,10 @@ const assembleComponents = (ast) => {
       // This function is called for each FunctionDeclaration node in the AST
       // console.log("FunctionDeclaration:", path.node.id.name);
 
-      const componentObject = {
-        name: path.node.id.name,
-        code: getComponentCode(path.node),
-      };
+      const componentObject = createComponentObject(
+        path.node.id.name,
+        path.node
+      );
 
       components.push(componentObject);
     },
@@ -54,10 +59,10 @@ const assembleComponents = (ast) => {
         path.node.declarations[0].init &&
         path.node.declarations[0].init.type === "ArrowFunctionExpression"
       ) {
-        const componentObject = {
-          name: path.node.declarations[0].id.name,
-          code: getComponentCode(path.node),
-        };
+        const componentObject = createComponentObject(
+          path.node.declarations[0].id.name,
+          path.node
+        );
 
         // Push it to the functions array
         components.push(componentObject);
@@ -67,10 +72,10 @@ const assembleComponents = (ast) => {
     ClassDeclaration(path) {
       // This function is called for each ClassDeclaration node in the AST
       // console.log("ClassDeclaration:", path.node.id.name);
-      const componentObject = {
-        name: path.node.id.name,
-        code: getComponentCode(path.node),
-      };
+      const componentObject = createComponentObject(
+        path.node.id.name,
+        path.node
+      );
 
       components.push(componentObject);
     },
@@ -90,7 +95,7 @@ const createAstFromComponentNode = (node) => {
   return constructedAst;
 };
 
-const getComponentCode = (node) => {
+const getComponentCodeFromNode = (node) => {
   // Since we are receiving partial ASTs, we need to construct a full AST for each component
   const constructedAst = createAstFromComponentNode(node);
 
@@ -160,32 +165,48 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
     });
 
     try {
-      // Ask the user if they want to make the API call for this file
-      const makeApiCall = await new Promise((resolve) => {
-        rl.question(
-          `Make API call for file ${documentation.component}? (yes/no) `,
-          (answer) => {
-            resolve(answer.toLowerCase() === "yes");
-          }
-        );
-      });
-      if (makeApiCall) {
-        documentation.description = await getComponentDescription(
-          componentCode
-        );
-      } else {
-        documentation.description = "This is a test description";
+      let satisfiedWithDescription = false;
+
+      while (!satisfiedWithDescription) {
+        // Ask the user if they want to make the API call for this file
+        const makeApiCall = await new Promise((resolve) => {
+          rl.question(
+            `Make API call for file ${documentation.component}? (yes/no) `,
+            (answer) => {
+              resolve(answer.toLowerCase() === "yes");
+            }
+          );
+        });
+        if (makeApiCall) {
+          documentation.description = await getComponentDescription(
+            componentCode
+          );
+
+          const isSatisfied = await new Promise((resolve) => {
+            rl.question(
+              `Are you satisfied with the description? (yes/no) `,
+              (answer) => {
+                resolve(answer.toLowerCase() === "yes");
+              }
+            );
+          });
+
+          satisfiedWithDescription = isSatisfied;
+        } else {
+          documentation.description = "This is a test description";
+          satisfiedWithDescription = true;
+        }
       }
     } catch (error) {
       console.error("Error fetching description:", error.message);
       // In case of an error, set description to an empty string
       documentation.description = "";
     }
+
+    rl.close();
   } else {
     documentation.description = "This is a test description";
   }
-
-  rl.close();
 };
 
 const parseComponentObjects = async (componentObject) => {
@@ -253,6 +274,8 @@ const getComponentDescription = async (componentCode) => {
 
         // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
+          console.log("Description:", responseData.choices[0].message.content);
+
           resolve(responseData.choices[0].message.content);
         } else {
           reject(new Error("API response does not have expected data."));
