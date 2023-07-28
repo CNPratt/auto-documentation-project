@@ -23,10 +23,10 @@ const hocComponentRegex = /const\s+([A-Z]\w+)\s*=\s*withLog\(\w+\);/g;
 const createClassComponentRegex = /const\s+([A-Z]\w+)\s*=\s*React.createClass/g;
 
 // Variable Declaration Starting with Capital Letter
-const variableStartsWithCapitalRegex = /const\s+([A-Z]\w*)\s*=/;
+const variableStartsWithCapitalRegex = /const\s+([A-Z]\w*)\s*=/g;
 
 // Regex pattern to match functional component declaration
-const functionDeclarationRegex = /export\s+default\s+function\s+([A-Z]\w+)/;
+const functionDeclarationRegex = /export\s+default\s+function\s+([A-Z]\w+)/g;
 
 const componentRegexArray = [
   functionComponentRegex,

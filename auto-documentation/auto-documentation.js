@@ -17,6 +17,10 @@ let updatedComponents = [];
 // Boolean to control whether to use calls to the OpenAI API to generate descriptions
 const useOpenAI = false;
 
+// Descriptive statement added to the beginning of the OpenAI prompt
+const prefaceStatement =
+  "Please provide detailed documentation for the following React component code:";
+
 // This is the path connector between where we are running this file and where this program should look for files
 const relativeDirectoryConnector = "../scripts";
 
@@ -119,7 +123,7 @@ const parseVariables = (sourceCode, documentation) => {
 
 const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   // Get the component code for description generation
-  const componentCode = `Please generate a description of the following React component, in the style of professional React code documentation: ${documentation.component}\n${sourceCode}`;
+  const componentCode = `${prefaceStatement}: ${documentation.component}\n${sourceCode}`;
 
   console.log("Getting description for component:", documentation.component);
 
@@ -202,6 +206,8 @@ const getComponentDescription = async (componentCode) => {
       res.on("end", () => {
         const responseData = JSON.parse(data);
         console.log("Response from ChatGPT API:", responseData);
+
+        // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
           resolve(responseData.choices[0].message.content);
         } else {
@@ -235,6 +241,7 @@ const getDocumentation = async (files) => {
     if (file.endsWith(".js")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");
+
         const parsedDocumentation = await parseDocumentation(sourceCode);
         if (parsedDocumentation.component) {
           documentation.push(parsedDocumentation);
