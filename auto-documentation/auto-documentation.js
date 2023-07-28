@@ -13,10 +13,10 @@ const babelParser = require("@babel/parser");
 const babelTraverse = require("@babel/traverse");
 const generator = require("@babel/generator").default;
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+// const rl = readline.createInterface({
+//   input: process.stdin,
+//   output: process.stdout,
+// });
 
 let updatedComponents = [];
 
@@ -154,6 +154,11 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   console.log("Getting description for component:", documentation.component);
 
   if (useOpenAI) {
+    rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
     try {
       // Ask the user if they want to make the API call for this file
       const makeApiCall = await new Promise((resolve) => {
@@ -179,6 +184,8 @@ const getDescriptionFromAPI = async (documentation, sourceCode, useOpenAI) => {
   } else {
     documentation.description = "This is a test description";
   }
+
+  rl.close();
 };
 
 const parseComponentObjects = async (componentObject) => {
@@ -293,7 +300,7 @@ const getDocumentation = async (files) => {
 
   for (const file of files) {
     console.log(`Getting documentation for ${file}`);
-    if (file.endsWith(".js")) {
+    if (file.endsWith(".js") && file.includes("Screen")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");
 

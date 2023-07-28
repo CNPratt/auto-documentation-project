@@ -1,135 +1,67 @@
 module.exports = [
   {
-    component: 'CMapMaster',
+    component: "helpSection",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'a2878f2f3b8b2ab68954514a3c6178b2e664f494464705f8dbfa9a35daee1a9d'
+    description:
+      'The purpose of this React component code is to display a help section with instructions and images. It includes a title ("Instructions") and content that consists of multiple Text and Image components. The Text components provide step-by-step instructions for using a website, while the Image components illustrate the expected appearance of certain elements on the website. This help section is likely used as a guide or reference for users of a particular application.',
+    sourceCodeHash:
+      "ba514b8137da8265b032dcb7af0ddb43373f7776ad53bb7a5001a03f5fad2040",
   },
   {
-    component: 'CardDisplay',
+    component: "CustomMapScreen",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'cc00a6bfff24dffe97b8348049efe6ceb93ea91adf73094187feb1f61f37341a'
+    description:
+      'The purpose of this `CustomMapScreen` component is to display a screen for creating and managing custom maps. The component has a state that includes the mode (either "create" or "mymaps"), a new map name, new map IDs, search text, and search results. It also includes functions for adding and removing map IDs, switching between modes, and rendering the component.\n' +
+      "\n" +
+      "In the render function, the component displays a background image and a view. Inside the view, it renders various UI elements including text inputs for new map name and IDs, a search input, and buttons for creating a map, searching, and switching modes. The component also renders a list of search results or a list of custom map cards based on the mode.",
+    sourceCodeHash:
+      "76ade193720df3761ccd1a953a84de81baba0725d8052489982744790997d495",
   },
   {
-    component: 'CardFlatList',
+    component: "FavoritesMap",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '66aa58357c47e67c265e7c0515dcedae0896ce891762ef78b189dd8d8ab36968'
+    description:
+      "The FavoritesMap component is used to display a map of favorite items. It extends the React Component class and sets the navigationOptions to define the title and styling for the header. The render function returns the CardDisplay component with all the props passed to it.",
+    sourceCodeHash:
+      "67aca7ecb0c1827d79976b10688beab30dc87716fd96c286d8b8800cbbc95311",
   },
   {
-    component: 'Screen',
+    component: "NullLabel",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '8387b71c315249c0472fc9c950cccc913bfda27ec5a24001e53d8522cc2c8fe4'
+    description:
+      'The purpose of the "NullLabel" React component is to render a null value, meaning it does not render any visible content or elements on the screen. The component does not have any functionality and simply returns null in its render method.',
+    sourceCodeHash:
+      "b7f46199dd62ce5ae921ad5cdf7550eae5ff2fe3eb8e4a5e17bfa6ed1ea715d8",
   },
   {
-    component: 'CustomMapScreen',
+    component: "BackButton",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '780fbfff586a56487c471c7a3e25cb709e0b325804bf4b4fbe60b6470eb3a4fd'
+    description:
+      'The BackButton component is a React component that renders a button with the text "BACK". When the button is pressed, it will navigate to the screen specified by the "back" parameter obtained from the parent navigation props. It also applies some styling to the text, such as color, font size, and text shadow.',
+    sourceCodeHash:
+      "f2af26b7ed7d043d5fef9799304700be829818cf99824c22308022dc40cf7f79",
   },
   {
-    component: 'FavoritesMap',
+    component: "CustomDrawer",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '101932790cddea7c1cf34992c84249a277cee33f7a794ffe11fe6227fa264dc7'
+    description:
+      "The CustomDrawer component is a React component that represents a custom drawer menu. The component manages the state of the address text and keyboard offset. It also listens to keyboard events and updates the state accordingly. The render method displays various UI elements including an image background, status bar, scroll view, drawer items, and input fields. The component also uses animations to adjust the height of certain elements based on the keyboard visibility.",
+    sourceCodeHash:
+      "a9e80de63b9b11f6b1b1d185fdc34f692244ff0ede81df1c93c83fc78d0b40b8",
   },
   {
-    component: 'Home',
+    component: "FinderNav",
     variables: [],
     functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'f7ff1b103491e09db47459d230ef2a2ccc3fc5b79a6aac9e67c05715a92cc498'
+    description:
+      "The purpose of the FinderNav component is to create a navigation stack using the createStackNavigator method from the React Navigation library. It takes a type parameter and renders a CardDisplay component with certain props based on the given type. The component also configures default navigation options including the title, header style, background image, header text color and style, and a left button icon that toggles the drawer navigation.",
+    sourceCodeHash:
+      "4fed48156de6ca039d71110f663b328a78a0658e238e2620b43ab431eb5342ee",
   },
-  {
-    component: 'Main',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '888982af430407bd045984209d69e1fd43d348592173accf73e67c4319ea04c3'
-  },
-  {
-    component: 'HomeNavigator',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'f983befdb06c1cc4b8c8139a3a8da6e5ba5a4b9ce9ba9e6673e78edb93528073'
-  },
-  {
-    component: 'TestMap',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'd616fe5564503890501f22738d5dcaf5659cc876b9fd77782c587e40beeec3d1'
-  },
-  {
-    component: 'WebViewer',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'c2d93d5ae7dcd731fbc013f7b6c42fff7e40acab54b0a2812b952903e68d76d8'
-  },
-  {
-    component: 'AccordionView',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '65a73620582f97e0132190c0ca29659ae54c0635f0b3a11229dc8573a884c295'
-  },
-  {
-    component: 'CustomMapCard',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '536c8d7adbe07dab90fd4993d436a67760dd11852bac7024a155f1ce30bb7ab8'
-  },
-  {
-    component: 'ErrorDisplay',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '085951b82c020e800c83cfc5e497ae443dbafe2deb0c55c9411d79037714a050'
-  },
-  {
-    component: 'ObsCard',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'b3039e0365eac31ff2bdd35b11cddec2974c3675b052f333f17d733e11d25257'
-  },
-  {
-    component: 'SearchResult',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'b7812bc2c6ab52db3149964e04e56a567a8fc2c8b56956a854a070cde960564f'
-  },
-  {
-    component: 'TaxaCard',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'da6266ba7faaaecd169ad60734db871aea7011413fc8163ca2289c024c90d9e2'
-  },
-  {
-    component: 'TaxaDirectoryComponent',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: 'bf705158f67f86c32a5cb57d9ab7217ed3a43f83b7b541231d3b17da03c6d45c'
-  },
-  {
-    component: 'TaxaInfoClass',
-    variables: [],
-    functions: [],
-    description: 'This is a test description',
-    encodedSourceCode: '486cf299325243e5d5b06ee5f01cb4d85efb23d91e8bd02cd5a07b535968ee10'
-  }
 ];
