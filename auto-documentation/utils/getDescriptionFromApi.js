@@ -1,4 +1,6 @@
 const promptUserForApi = require("./promptUserForApi");
+const chalkUtils = require("./chalkUtils");
+const logErrorRed = chalkUtils.logErrorRed;
 
 const config = require("../config");
 
@@ -12,7 +14,7 @@ const getDescriptionFromAPI = async (documentation, sourceCode) => {
     try {
       await promptUserForApi(documentation, componentCode);
     } catch (error) {
-      console.error("Error fetching description:", error.message);
+      logErrorRed("Error fetching description:", error.message);
       // In case of an error, set description to an empty string
       documentation.description = "";
     }

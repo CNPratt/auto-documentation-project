@@ -3,6 +3,9 @@ const assembleComponents = require("./assembleComponents");
 const babelParser = require("@babel/parser");
 const fs = require("fs");
 
+const chalkUtils = require("./chalkUtils");
+const logErrorRed = chalkUtils.logErrorRed;
+
 const config = require("../config");
 
 const getDocumentation = async (files) => {
@@ -32,7 +35,7 @@ const getDocumentation = async (files) => {
 
         await getFileDocumentation(fileComponentObjects, masterDocument);
       } catch (error) {
-        console.error(
+        logErrorRed(
           `Error reading or parsing ${file}. Error: ${error.message}`
         );
       }

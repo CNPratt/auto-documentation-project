@@ -1,5 +1,8 @@
 const https = require("https");
 
+const chalkUtils = require("./chalkUtils");
+const logErrorRed = chalkUtils.logErrorRed;
+
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
   const apiKey = "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";
@@ -45,7 +48,7 @@ const getComponentDescription = async (componentCode) => {
     });
 
     req.on("error", (error) => {
-      console.error(
+      logErrorRed(
         "Error while fetching description from ChatGPT API:",
         error.message
       );

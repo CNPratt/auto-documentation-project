@@ -1,6 +1,9 @@
 const babelTraverse = require("@babel/traverse");
 const createComponentObject = require("./createComponentObject");
 const nodeReturnsJsx = require("./nodeReturnsJsx");
+const chalkUtils = require("./chalkUtils");
+
+const logErrorRed = chalkUtils.logErrorRed;
 
 const assembleComponents = (ast) => {
   const components = [];
@@ -20,7 +23,7 @@ const assembleComponents = (ast) => {
           components.push(componentObject);
         }
       } catch (error) {
-        console.error(
+        logErrorRed(
           "Error parsing function " + path.node.id.name + ":",
           error.message
         );
@@ -45,7 +48,7 @@ const assembleComponents = (ast) => {
             components.push(componentObject);
           }
         } catch (error) {
-          console.error(
+          logErrorRed(
             "Error parsing arrow function " +
               path.node.declarations[0].id.name +
               ":",
@@ -68,7 +71,7 @@ const assembleComponents = (ast) => {
           components.push(componentObject);
         }
       } catch (error) {
-        console.error(
+        logErrorRed(
           "Error parsing class declaration " + path.node.id.name + ":",
           error.message
         );

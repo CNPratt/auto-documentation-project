@@ -1,4 +1,6 @@
 const parseComponentObjects = require("./parseComponentObjects");
+const chalkUtils = require("./chalkUtils");
+const logErrorRed = chalkUtils.logErrorRed;
 
 const getFileDocumentation = async (fileComponentObjects, masterDocument) => {
   // Parse the documentation for each component in the file
@@ -9,7 +11,7 @@ const getFileDocumentation = async (fileComponentObjects, masterDocument) => {
       // console.log(parsedDocumentation);
       masterDocument.push(parsedDocumentation);
     } catch (error) {
-      console.error(
+      logErrorRed(
         `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
       );
     }
