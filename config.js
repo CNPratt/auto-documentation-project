@@ -1,7 +1,7 @@
 // Boolean to control whether to use calls to the OpenAI API to generate descriptions
 const useOpenAI = true;
 
-const apiKey = "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";
+const apiKey = "YOUR_API_KEY_HERE";
 const openAiEndpoint = "https://api.openai.com/v1/chat/completions";
 
 // Descriptive statement added to the beginning of the OpenAI prompt
