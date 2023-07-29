@@ -6,6 +6,7 @@ const config = require("../config");
 const fs = require("fs");
 const path = require("path");
 const util = require("util");
+const { logErrorBgRed, logGreen, logNativeGreen } = require("./chalkUtils");
 
 const generateDocumentation = async () => {
   console.log("Generating documentation");
@@ -27,11 +28,22 @@ const generateDocumentation = async () => {
   // Create a Buffer from the JavaScript code
   const buffer = Buffer.from(jsCode);
 
-  // Write the buffer to the documentation.js file
-  fs.writeFileSync(documentationFilePath, buffer);
+  // Make sure the error is logged if there is one writing the file
+  try {
+    if (config.updatedComponents.length > 0) {
+      // Write the buffer to the documentation.js file
+      fs.writeFileSync(documentationFilePath, buffer);
 
-  console.log("Documentation generated");
-  console.log("Updated components:", config.updatedComponents);
+      logGreen("Documentation successfully generated and saved!");
+      logNativeGreen("Updated components:", config.updatedComponents);
+    } else {
+      logGreen(
+        "No components updated. Previous documentation remains unchanged."
+      );
+    }
+  } catch (e) {
+    logErrorBgRed("Error writing documentation file:", e);
+  }
 };
 
 module.exports = generateDocumentation;

@@ -6,12 +6,15 @@ const generateChalkLog = (
   message,
   secondaryMessage = ""
 ) => {
-  const totalMessage = `${message} ${secondaryMessage ? secondaryMessage : ""}`;
-  console[consoleType](chalk[color](totalMessage));
+  console[consoleType](chalk[color](message), chalk[color](secondaryMessage));
 };
 
 const logGreen = (message, secondaryMessage) =>
   generateChalkLog("log", "green", message, secondaryMessage);
+
+const logNativeGreen = (message, secondaryMessage) =>
+  // log component green without chalk with the escape sequence
+  console.log("\x1b[32m", "Updated components:", secondaryMessage);
 
 const logYellow = (message, secondaryMessage) =>
   generateChalkLog("log", "yellow", message, secondaryMessage);
@@ -37,8 +40,12 @@ const logGray = (message, secondaryMessage) =>
 const logErrorRed = (message, secondaryMessage) =>
   generateChalkLog("error", "red", message, secondaryMessage);
 
+const logErrorBgRed = (message, secondaryMessage) =>
+  generateChalkLog("error", "bgRed", message, secondaryMessage);
+
 const chalkUtils = {
   logGreen,
+  logNativeGreen,
   logYellow,
   logBlue,
   logMagenta,
@@ -47,6 +54,7 @@ const chalkUtils = {
   logBlack,
   logGray,
   logErrorRed,
+  logErrorBgRed,
 };
 
 module.exports = chalkUtils;

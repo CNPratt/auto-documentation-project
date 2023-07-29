@@ -1,6 +1,9 @@
 // Boolean to control whether to use calls to the OpenAI API to generate descriptions
 const useOpenAI = true;
 
+const apiKey = "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";
+const openAiEndpoint = "https://api.openai.com/v1/chat/completions";
+
 // Descriptive statement added to the beginning of the OpenAI prompt
 const prefaceStatement =
   "Please provide a high level overview of purpose and functionality for the following React component code in 300 or less characters:";
@@ -12,6 +15,8 @@ let updatedComponents = [];
 
 module.exports = {
   useOpenAI,
+  apiKey,
+  openAiEndpoint,
   prefaceStatement,
   relativeDirectoryConnector,
   updatedComponents,

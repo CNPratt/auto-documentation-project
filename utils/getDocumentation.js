@@ -18,7 +18,7 @@ const getDocumentation = async (files) => {
   const masterDocument = [];
 
   for (const file of files) {
-    logYellow(`Getting documentation for file: ${file}`);
+    logYellow("Getting documentation for file:", file);
     if (file.endsWith(".js")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");

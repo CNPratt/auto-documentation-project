@@ -1,12 +1,10 @@
 const https = require("https");
 
 const { logErrorRed, logMagenta } = require("./chalkUtils");
+const config = require("../config");
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
-  const apiKey = "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";
-  const endpoint = "https://api.openai.com/v1/chat/completions";
-
   const requestBody = JSON.stringify({
     model: "gpt-3.5-turbo",
     messages: [{ role: "user", content: componentCode }],
@@ -18,12 +16,12 @@ const getComponentDescription = async (componentCode) => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${config.apiKey}`,
     },
   };
 
   return new Promise((resolve, reject) => {
-    const req = https.request(endpoint, options, (res) => {
+    const req = https.request(config.openAiEndpoint, options, (res) => {
       let data = "";
       res.on("data", (chunk) => {
         data += chunk;
