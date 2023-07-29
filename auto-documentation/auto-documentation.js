@@ -1,5 +1,7 @@
 const getHash = require("./utils/getHash");
 const logAst = require("./utils/logAst");
+const createComponentObject = require("./utils/createComponentObject");
+const nodeReturnsJsx = require("./utils/nodeReturnsJsx");
 
 const fs = require("fs");
 const path = require("path");
@@ -25,29 +27,20 @@ const prefaceStatement =
 // This is the relative path between where we are running this file and where this program should look for files
 const relativeDirectoryConnector = "../../../iforager_react_native/scripts";
 
-const createComponentObject = (name, node) => {
-  const componentObject = {
-    name: name,
-    code: getComponentCodeFromNode(node),
-  };
+// const nodeReturnsJSX = (node) => {
+//   let hasJSX = false;
+//   babelTraverse.default(node, {
+//     enter(path) {
+//       if (babelTypes.isJSX(path.node)) {
+//         hasJSX = true;
+//         path.stop();
+//       }
+//     },
+//     noScope: true,
+//   });
 
-  return componentObject;
-};
-
-const nodeReturnsJSX = (node) => {
-  let hasJSX = false;
-  babelTraverse.default(node, {
-    enter(path) {
-      if (babelTypes.isJSX(path.node)) {
-        hasJSX = true;
-        path.stop();
-      }
-    },
-    noScope: true,
-  });
-
-  return hasJSX;
-};
+//   return hasJSX;
+// };
 
 const assembleComponents = (ast) => {
   const components = [];
@@ -57,7 +50,7 @@ const assembleComponents = (ast) => {
       console.log("Function declaration:" + path.node.id.name);
 
       try {
-        const hasJSX = nodeReturnsJSX(path.node);
+        const hasJSX = nodeReturnsJsx(path.node);
 
         if (hasJSX) {
           const componentObject = createComponentObject(
@@ -82,7 +75,7 @@ const assembleComponents = (ast) => {
         console.log("Arrow expression:" + path.node.declarations[0].id.name);
 
         try {
-          const hasJSX = nodeReturnsJSX(path.node.declarations[0].init);
+          const hasJSX = nodeReturnsJsx(path.node.declarations[0].init);
 
           if (hasJSX) {
             const componentObject = createComponentObject(
@@ -104,7 +97,7 @@ const assembleComponents = (ast) => {
 
     ClassDeclaration(path) {
       console.log("Class declaration:" + path.node.id.name);
-      const hasJSX = nodeReturnsJSX(path.node);
+      const hasJSX = nodeReturnsJsx(path.node);
 
       try {
         if (hasJSX) {
@@ -124,25 +117,6 @@ const assembleComponents = (ast) => {
   });
 
   return components;
-};
-
-const createAstFromComponentNode = (node) => {
-  // Create a new AST from the node
-  const constructedAst = babelTypes.file(
-    babelTypes.program([node], [], "module"),
-    [],
-    []
-  );
-
-  return constructedAst;
-};
-
-const getComponentCodeFromNode = (node) => {
-  // Since we are receiving partial ASTs, we need to construct a full AST for each component
-  const constructedAst = createAstFromComponentNode(node);
-
-  // Generate the code from the new AST
-  return generator(constructedAst).code;
 };
 
 const getFiles = async (dir, baseDir = null) => {
