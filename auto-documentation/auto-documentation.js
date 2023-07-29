@@ -35,7 +35,7 @@ const createComponentObject = (name, node) => {
   return componentObject;
 };
 
-const createComponentObjectIfReturnsJSX = (name, node, componentsArray) => {
+const nodeReturnsJSX = (node) => {
   // Traverse the AST node and check if it has a JSX expression
   let hasJSX = false;
   babelTraverse.default(node, {
@@ -48,10 +48,7 @@ const createComponentObjectIfReturnsJSX = (name, node, componentsArray) => {
     noScope: true,
   });
 
-  if (hasJSX) {
-    const componentObject = createComponentObject(name, node);
-    componentsArray.push(componentObject);
-  }
+  return hasJSX;
 };
 
 const assembleComponents = (ast) => {
@@ -59,11 +56,24 @@ const assembleComponents = (ast) => {
 
   babelTraverse.default(ast, {
     FunctionDeclaration(path) {
-      createComponentObjectIfReturnsJSX(
-        path.node.id.name,
-        path.node,
-        components
-      );
+      console.log("Function declaration:" + path.node.id.name);
+
+      try {
+        const hasJSX = nodeReturnsJSX(path.node);
+
+        if (hasJSX) {
+          const componentObject = createComponentObject(
+            path.node.id.name,
+            node
+          );
+          components.push(componentObject);
+        }
+      } catch (error) {
+        console.error(
+          "Error parsing function " + path.node.id.name + ":",
+          error.message
+        );
+      }
     },
 
     VariableDeclaration(path) {
@@ -71,20 +81,47 @@ const assembleComponents = (ast) => {
         path.node.declarations[0].init &&
         path.node.declarations[0].init.type === "ArrowFunctionExpression"
       ) {
-        createComponentObjectIfReturnsJSX(
-          path.node.declarations[0].id.name,
-          path.node.declarations[0].init,
-          components
-        );
+        console.log("Arrow expression:" + path.node.declarations[0].id.name);
+
+        try {
+          const hasJSX = nodeReturnsJSX(path.node.declarations[0].init);
+
+          if (hasJSX) {
+            const componentObject = createComponentObject(
+              path.node.declarations[0].id.name,
+              node
+            );
+            components.push(componentObject);
+          }
+        } catch (error) {
+          console.error(
+            "Error parsing arrow function " +
+              path.node.declarations[0].id.name +
+              ":",
+            error.message
+          );
+        }
       }
     },
 
     ClassDeclaration(path) {
-      createComponentObjectIfReturnsJSX(
-        path.node.id.name,
-        path.node,
-        components
-      );
+      console.log("Class declaration:" + path.node.id.name);
+      const hasJSX = nodeReturnsJSX(path.node);
+
+      try {
+        if (hasJSX) {
+          const componentObject = createComponentObject(
+            path.node.id.name,
+            path.node
+          );
+          components.push(componentObject);
+        }
+      } catch (error) {
+        console.error(
+          "Error parsing class declaration " + path.node.id.name + ":",
+          error.message
+        );
+      }
     },
   });
 
@@ -287,7 +324,9 @@ const getComponentDescription = async (componentCode) => {
 
         // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
-          console.log("Description:", responseData.choices[0].message.content);
+          console.log(
+            "Description: " + responseData.choices[0].message.content
+          );
 
           resolve(responseData.choices[0].message.content);
         } else {
@@ -314,10 +353,9 @@ const getFileDocumentation = async (fileComponentObjects, masterDocument) => {
   for (const componentObject of fileComponentObjects) {
     try {
       const parsedDocumentation = await parseComponentObjects(componentObject);
-      // if (parsedDocumentation.component) {
-      console.log(parsedDocumentation);
+
+      // console.log(parsedDocumentation);
       masterDocument.push(parsedDocumentation);
-      // }
     } catch (error) {
       console.error(
         `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
