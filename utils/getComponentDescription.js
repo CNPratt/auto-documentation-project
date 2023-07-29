@@ -1,15 +1,15 @@
 const https = require("https");
 
 const { logErrorRed, logMagenta } = require("./chalkUtils");
+
 const config = require("../config");
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
   const requestBody = JSON.stringify({
-    model: "gpt-3.5-turbo",
+    model: config.model,
     messages: [{ role: "user", content: componentCode }],
-    // prompt: componentCode,
-    max_tokens: 300,
+    max_tokens: config.maxTokens,
   });
 
   const options = {
