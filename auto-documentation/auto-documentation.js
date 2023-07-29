@@ -36,14 +36,13 @@ const createComponentObject = (name, node) => {
 };
 
 const nodeReturnsJSX = (node) => {
-  // Traverse the AST node and check if it has a JSX expression
   let hasJSX = false;
   babelTraverse.default(node, {
-    JSXElement() {
-      hasJSX = true;
-    },
-    JSXFragment() {
-      hasJSX = true;
+    enter(path) {
+      if (babelTypes.isJSX(path.node)) {
+        hasJSX = true;
+        path.stop();
+      }
     },
     noScope: true,
   });
