@@ -11,7 +11,6 @@ const babelCore = require("@babel/core");
 const babelTypes = require("@babel/types");
 const babelParser = require("@babel/parser");
 const babelTraverse = require("@babel/traverse");
-const { create } = require("domain");
 const generator = require("@babel/generator").default;
 
 let updatedComponents = [];
@@ -23,7 +22,7 @@ const useOpenAI = true;
 const prefaceStatement =
   "Please provide a high level overview of purpose and functionality for the following React component code in 300 or less characters:";
 
-// This is the path connector between where we are running this file and where this program should look for files
+// This is the relative path between where we are running this file and where this program should look for files
 const relativeDirectoryConnector = "../../../iforager_react_native/scripts";
 
 const createComponentObject = (name, node) => {

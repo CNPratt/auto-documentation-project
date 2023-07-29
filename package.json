@@ -4,6 +4,7 @@
   "description": "Node application to automatically parse through React projects and generate descriptions with OpenAI API.",
   "main": "index.js",
   "scripts": {
+    "start": "node auto-documentation/auto-documentation.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
