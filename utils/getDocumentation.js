@@ -1,5 +1,6 @@
 const getFileDocumentation = require("./getFileDocumentation");
 const assembleComponents = require("./assembleComponents");
+const { logYellow } = require("./chalkUtils");
 const babelParser = require("@babel/parser");
 const fs = require("fs");
 
@@ -9,7 +10,7 @@ const logErrorRed = chalkUtils.logErrorRed;
 const config = require("../config");
 
 const getDocumentation = async (files) => {
-  console.log("Getting documentation");
+  logYellow("Getting documentation");
 
   // Clear the updated components array
   config.updatedComponents = [];
@@ -17,7 +18,7 @@ const getDocumentation = async (files) => {
   const masterDocument = [];
 
   for (const file of files) {
-    console.log(`Getting documentation for ${file}`);
+    logYellow(`Getting documentation for file: ${file}`);
     if (file.endsWith(".js")) {
       try {
         const sourceCode = await fs.promises.readFile(file, "utf-8");

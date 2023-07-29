@@ -1,7 +1,6 @@
 const https = require("https");
 
-const chalkUtils = require("./chalkUtils");
-const logErrorRed = chalkUtils.logErrorRed;
+const { logErrorRed, logMagenta } = require("./chalkUtils");
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
@@ -36,9 +35,7 @@ const getComponentDescription = async (componentCode) => {
 
         // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
-          console.log(
-            "Description: " + responseData.choices[0].message.content
-          );
+          logMagenta("Description: " + responseData.choices[0].message.content);
 
           resolve(responseData.choices[0].message.content);
         } else {

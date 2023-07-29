@@ -1,5 +1,6 @@
 const readline = require("readline");
 const getComponentDescription = require("./getComponentDescription");
+const chalk = require("chalk");
 
 const promptUserForApi = async (documentation, componentCode) => {
   let counter = 0;
@@ -11,8 +12,13 @@ const promptUserForApi = async (documentation, componentCode) => {
   });
 
   while (!shouldContinue) {
-    const originalQuestion = `Make API call for file ${documentation.component}? (yes/no) `;
-    const regenerateQuestion = `Make another API call for file ${documentation.component}? (yes/no) `;
+    const originalQuestion = chalk.bgGreen(
+      `Make API call for file ${documentation.component}? (yes/no) `
+    );
+
+    const regenerateQuestion = chalk.bgGreen(
+      `Make another API call for file ${documentation.component}? (yes/no) `
+    );
     const question = counter === 0 ? originalQuestion : regenerateQuestion;
     counter++;
 
@@ -24,14 +30,14 @@ const promptUserForApi = async (documentation, componentCode) => {
     });
     if (makeApiCall) {
       documentation.description = await getComponentDescription(componentCode);
+      const coloredQuestion = chalk.bgGreen(
+        `Would you like to save the description? (yes/no) `
+      );
 
       const shouldSave = await new Promise((resolve) => {
-        rl.question(
-          `Would you like to save the description? (yes/no) `,
-          (answer) => {
-            resolve(answer.toLowerCase() === "yes");
-          }
-        );
+        rl.question(coloredQuestion, (answer) => {
+          resolve(answer.toLowerCase() === "yes");
+        });
       });
 
       shouldContinue = shouldSave;
