@@ -7,7 +7,7 @@ const generateChalkLog = (
   secondaryMessage = ""
 ) => {
   const totalMessage = `${message} ${secondaryMessage ? secondaryMessage : ""}`;
-  console.log(chalk[color](totalMessage));
+  console[consoleType](chalk[color](totalMessage));
 };
 
 const logGreen = (message, secondaryMessage) =>

@@ -1,16 +1,14 @@
 const babelTraverse = require("@babel/traverse");
 const createComponentObject = require("./createComponentObject");
 const nodeReturnsJsx = require("./nodeReturnsJsx");
-const chalkUtils = require("./chalkUtils");
-
-const logErrorRed = chalkUtils.logErrorRed;
+const { logWhite, logErrorRed } = require("./chalkUtils");
 
 const assembleComponents = (ast) => {
   const components = [];
 
   babelTraverse.default(ast, {
     FunctionDeclaration(path) {
-      console.log("Function declaration:" + path.node.id.name);
+      logWhite("Identified function declaration:", path.node.id.name);
 
       try {
         const hasJSX = nodeReturnsJsx(path.node);
@@ -35,7 +33,10 @@ const assembleComponents = (ast) => {
         path.node.declarations[0].init &&
         path.node.declarations[0].init.type === "ArrowFunctionExpression"
       ) {
-        console.log("Arrow expression:" + path.node.declarations[0].id.name);
+        logWhite(
+          "Identified arrow expression:",
+          path.node.declarations[0].id.name
+        );
 
         try {
           const hasJSX = nodeReturnsJsx(path.node.declarations[0].init);
@@ -59,7 +60,7 @@ const assembleComponents = (ast) => {
     },
 
     ClassDeclaration(path) {
-      console.log("Class declaration:" + path.node.id.name);
+      logWhite("Identified class declaration:", path.node.id.name);
       const hasJSX = nodeReturnsJsx(path.node);
 
       try {
