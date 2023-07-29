@@ -18,12 +18,12 @@ const prefaceStatement =
   "Please provide a high level overview of purpose and functionality for the following React component code in 300 or less characters:";
 
 // This is the relative path between where we are running this file and the root directory of the project
-const connectorToRootFolder = "../";
+const connectorToRootFolder = "..";
 
 // This is the relative path between where we are running this file and where this program should look for files
 // The connectorToRootFolder is added to the beginning of this path to get to the higher-level directory "auto-documentation-project"
 // Simply replace "YOUR_PATH_FROM_ROOT_TO_YOUR_DIRECTORY" with the path from the "auto-documentaion-project" root directory to the directory you want to document
-const relativeDirectoryConnector = `${connectorToRootFolder}YOUR_PATH_FROM_ROOT_TO_YOUR_DIRECTORY`;
+const relativeDirectoryConnector = `${connectorToRootFolder}/YOUR_PATH_FROM_ROOT_TO_YOUR_DIRECTORY`;
 
 let updatedComponents = [];
 
