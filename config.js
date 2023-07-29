@@ -1,18 +1,23 @@
 // Boolean to control whether to use calls to the OpenAI API to generate descriptions
 const useOpenAI = true;
 
+// The model to use for the OpenAI API
 const model = "gpt-3.5-turbo";
-// const apiKey = "YOUR_API_KEY_HERE";
 
-const apiKey = "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";
+// Your OpenAI API key
+const apiKey = "YOUR_API_KEY_HERE";
 
+// The endpoint for the OpenAI API
 const openAiEndpoint = "https://api.openai.com/v1/chat/completions";
+
+// The maximum number of tokens to use for the OpenAI API in its response
 const maxTokens = 300;
 
 // Descriptive statement added to the beginning of the OpenAI prompt
 const prefaceStatement =
   "Please provide a high level overview of purpose and functionality for the following React component code in 300 or less characters:";
 
+// This is the relative path between where we are running this file and the root directory of the project
 const connectorToRootFolder = "../";
 
 // This is the relative path between where we are running this file and where this program should look for files
