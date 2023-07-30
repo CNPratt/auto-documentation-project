@@ -13,11 +13,11 @@ const promptUserForApi = async (documentation, componentCode) => {
 
   while (!shouldContinue) {
     const originalQuestion = chalk.bgGreen(
-      `Make API call for file ${documentation.component}? (yes/no) `
+      `Make API call for component: ${documentation.component}? (yes/no) `
     );
 
     const regenerateQuestion = chalk.bgGreen(
-      `Make another API call for file ${documentation.component}? (yes/no) `
+      `Make another API call for component: ${documentation.component}? (yes/no) `
     );
     const question = counter === 0 ? originalQuestion : regenerateQuestion;
     counter++;

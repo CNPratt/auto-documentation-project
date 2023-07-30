@@ -1,4 +1,5 @@
 const promptUserForApi = require("./promptUserForApi");
+const getComponentDescription = require("./getComponentDescription");
 const chalkUtils = require("./chalkUtils");
 const logErrorRed = chalkUtils.logErrorRed;
 
@@ -12,7 +13,13 @@ const getDescriptionFromAPI = async (documentation, sourceCode) => {
 
   if (config.useOpenAI) {
     try {
-      await promptUserForApi(documentation, componentCode);
+      if (config.enableUserPrompts) {
+        await promptUserForApi(documentation, componentCode);
+      } else {
+        documentation.description = await getComponentDescription(
+          componentCode
+        );
+      }
     } catch (error) {
       logErrorRed("Error fetching description:", error.message);
       // In case of an error, set description to an empty string

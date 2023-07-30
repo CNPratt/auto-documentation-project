@@ -6,11 +6,16 @@ const config = require("../config");
 
 // Function to send the code to the ChatGPT API and obtain the description
 const getComponentDescription = async (componentCode) => {
-  const requestBody = JSON.stringify({
+  const request = {
     model: config.model,
     messages: [{ role: "user", content: componentCode }],
-    max_tokens: config.maxTokens,
-  });
+  };
+
+  if (config.useMaxTokens) {
+    request.max_tokens = config.maxTokens;
+  }
+
+  const requestBody = JSON.stringify(request);
 
   const options = {
     method: "POST",
@@ -33,7 +38,11 @@ const getComponentDescription = async (componentCode) => {
 
         // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
-          logMagenta("Description: " + responseData.choices[0].message.content);
+          if (config.enableUserPrompts) {
+            logMagenta(
+              "Description: " + responseData.choices[0].message.content
+            );
+          }
 
           resolve(responseData.choices[0].message.content);
         } else {
