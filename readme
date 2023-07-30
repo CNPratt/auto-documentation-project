@@ -24,4 +24,6 @@ Documentation objects look like this:
 
 Variables and functions remain unopopulated for now. If there is a previously generated document, the program will generate a SHA hash and check it against the hash for that component in the previous documentation, and will only update components that have mismatched hashes.
 
+The generated document will currently be written to auto_documentation_project/generated-documentation/generated-documentation.js, and this is the document that the program will look for when checking for previous documentation/individual component source hashes to check against. This program does not actually do anything with the generated data, and the file will be overwritten each time you generate documentation, even if no components have changed.
+
 This project is far from complete and may fail to identify certain comoponents.
