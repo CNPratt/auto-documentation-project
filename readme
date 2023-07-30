@@ -1,0 +1,27 @@
+This is an experimental project to parse through React project code, identify components that return JSX, and send the source code for the component to OpenAI API to generate a natural language description. You can run this program with
+
+npm run generate
+
+After running npm install, there are three variables that must be set in the config.js file.
+
+The first is your OpenAPI key, which you must have set up independently in your OpenAI API account. 
+
+The second variable that must be set is pathFromRootToDesiredDirectory. This should be the path from the root app_documentation__project folder to the folder/directory that contains the files you would like to generate documentation for. For performance sake, it is best to be as specific as possible in your path. For instance, if you have a directory for MyProject, but you know all your components are in MyProject/src/components, use the latter.
+
+Lastly, you must change the useOpenAi variable to true if you would like to turn this functionality on. Without it, the this program will simply identify components and return the documentation with a generic test description string.
+
+If this functionality is turned on, the user will be prompted in the terminal on whether to make an API call for each identified component. The user may select yes or no. The user will be shown the generated description in the terminal and offered the option to save the description. If not, the user will be given the option to generate another description. This will continue for each component.
+
+Documentation objects look like this:
+
+{
+    component: 'ComponentName',
+    variables: [],
+    functions: [],
+    description: 'This is a test description',
+    sourceCodeHash: '67aca7ecb0c1827d79976b10688beab30dc87716fd96c286d8b8800cbbc95311'
+}
+
+Variables and functions remain unopopulated for now. If there is a previously generated document, the program will generate a SHA hash and check it against the hash for that component in the previous documentation, and will only update components that have mismatched hashes.
+
+This project is far from complete and may fail to identify certain comoponents.
