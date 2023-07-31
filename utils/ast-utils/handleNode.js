@@ -1,6 +1,10 @@
-const createComponentObject = require("./createComponentObject");
+const createComponentObject = require("../component-utils/createComponentObject");
 const nodeReturnsJsx = require("./nodeReturnsJsx");
-const { logWhite, logErrorRed, logCyan } = require("./chalkUtils");
+const {
+  logWhite,
+  logErrorRed,
+  logCyan,
+} = require("../console-utils/chalkUtils");
 
 const handleNode = (identifier, nodeName, node, components) => {
   logWhite(`Identified ${identifier} declaration:`, nodeName);

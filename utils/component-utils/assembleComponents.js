@@ -1,5 +1,5 @@
 const babelTraverse = require("@babel/traverse");
-const handleNode = require("./handleNode");
+const handleNode = require("../ast-utils/handleNode");
 
 const assembleComponents = (ast) => {
   const components = [];

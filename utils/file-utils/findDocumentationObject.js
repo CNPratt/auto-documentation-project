@@ -4,7 +4,7 @@ const path = require("path");
 // Function to find the object with the matching component name in the generated documentationData array
 const findDocumentationObject = (componentName) => {
   // Relative path to the generated documentation file used to require it if it exists
-  const filePath = "../generated-documentation/generated-documentation.js";
+  const filePath = "../../generated-documentation/generated-documentation.js";
 
   // Absolute path to the generated documentation file used to find the matching object if it exists
   const documentationFilePath = path.join(__dirname, filePath);

@@ -1,6 +1,6 @@
 const babelTypes = require("@babel/types");
 
-const createAstFromComponentNode = (node) => {
+const createAstFromNodeFragment = (node) => {
   // Create a new AST from the node
   const constructedAst = babelTypes.file(
     babelTypes.program([node], [], "module"),
@@ -11,4 +11,4 @@ const createAstFromComponentNode = (node) => {
   return constructedAst;
 };
 
-module.exports = createAstFromComponentNode;
+module.exports = createAstFromNodeFragment;

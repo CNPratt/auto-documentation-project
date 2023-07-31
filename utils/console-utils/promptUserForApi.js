@@ -1,5 +1,5 @@
 const readline = require("readline");
-const getComponentDescription = require("./getComponentDescription");
+const getDescriptionFromAPI = require("../api-utils/getDescriptionFromApi");
 const chalk = require("chalk");
 
 const promptUserForApi = async (documentation, componentCode) => {
@@ -29,7 +29,7 @@ const promptUserForApi = async (documentation, componentCode) => {
       });
     });
     if (makeApiCall) {
-      documentation.description = await getComponentDescription(componentCode);
+      documentation.description = await getDescriptionFromAPI(componentCode);
       const coloredQuestion = chalk.bgGreen(
         `Would you like to save the description? (yes/no) `
       );
