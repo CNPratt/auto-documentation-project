@@ -6,7 +6,7 @@ After running npm install, there are three variables that must be set in the con
 
 The first is your OpenAPI key, which you must have set up independently in your OpenAI API account. 
 
-The second variable that must be set is pathFromRootToDesiredDirectory. This should be the path from the root app_documentation__project folder to the folder/directory that contains the files you would like to generate documentation for. For performance sake, it is best to be as specific as possible in your path. For instance, if you have a directory for MyProject, but you know all your components are in MyProject/src/components, use the latter.
+The second variable that must be set is pathFromRootToDesiredDirectory. This should be the path from the root app_documentation_project folder to the folder/directory that contains the files you would like to generate documentation for. For performance sake, it is best to be as specific as possible in your path. For instance, if you have a directory for MyProject, but you know all your components are in MyProject/src/components, use the latter.
 
 Lastly, you must change the useOpenAi variable to true if you would like to turn this functionality on. Without it, the this program will simply identify components and return the documentation with a generic test description string.
 
