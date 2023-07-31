@@ -1,5 +1,5 @@
 const promptUserForApi = require("../console-utils/promptUserForApi");
-const getComponentDescription = require("./getDescriptionFromApi");
+const getDescriptionFromAPI = require("./getDescriptionFromApi");
 const chalkUtils = require("../console-utils/chalkUtils");
 const logErrorRed = chalkUtils.logErrorRed;
 
@@ -16,9 +16,7 @@ const getDescription = async (documentation, sourceCode) => {
       if (config.enableUserPrompts) {
         await promptUserForApi(documentation, componentCode);
       } else {
-        documentation.description = await getComponentDescription(
-          componentCode
-        );
+        documentation.description = await getDescriptionFromAPI(componentCode);
       }
     } catch (error) {
       logErrorRed("Error fetching description:", error.message);
