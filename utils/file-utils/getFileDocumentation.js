@@ -1,5 +1,5 @@
-const parseComponentObjects = require("./parseComponentObjects");
-const chalkUtils = require("./chalkUtils");
+const parseComponentObjects = require("../component-utils/parseComponentObjects");
+const chalkUtils = require("../console-utils/chalkUtils");
 const logErrorRed = chalkUtils.logErrorRed;
 
 const getFileDocumentation = async (fileComponentObjects, masterDocument) => {

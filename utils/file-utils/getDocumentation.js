@@ -1,13 +1,10 @@
 const getFileDocumentation = require("./getFileDocumentation");
-const assembleComponents = require("./assembleComponents");
-const { logYellow } = require("./chalkUtils");
+const assembleComponents = require("../component-utils/assembleComponents");
+const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
 const babelParser = require("@babel/parser");
 const fs = require("fs");
 
-const chalkUtils = require("./chalkUtils");
-const logErrorRed = chalkUtils.logErrorRed;
-
-const config = require("../config");
+const config = require("../../config");
 
 const getDocumentation = async (files) => {
   logYellow("Getting documentation");

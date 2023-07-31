@@ -1,11 +1,11 @@
-const promptUserForApi = require("./promptUserForApi");
-const getComponentDescription = require("./getComponentDescription");
-const chalkUtils = require("./chalkUtils");
+const promptUserForApi = require("../console-utils/promptUserForApi");
+const getComponentDescription = require("./getDescriptionFromApi");
+const chalkUtils = require("../console-utils/chalkUtils");
 const logErrorRed = chalkUtils.logErrorRed;
 
-const config = require("../config");
+const config = require("../../config");
 
-const getDescriptionFromAPI = async (documentation, sourceCode) => {
+const getDescription = async (documentation, sourceCode) => {
   // Get the component code for description generation
   const componentCode = `${config.prefaceStatement}: ${documentation.component}\n${sourceCode}`;
 
@@ -30,4 +30,4 @@ const getDescriptionFromAPI = async (documentation, sourceCode) => {
   }
 };
 
-module.exports = getDescriptionFromAPI;
+module.exports = getDescription;

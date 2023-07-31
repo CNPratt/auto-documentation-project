@@ -29,7 +29,7 @@ const prefaceStatement =
 //   " Please provide an overall analysis of this React component and any glaring issues:";
 
 // This is the relative path between where we are running this file and the root directory of the project
-const connectorToRootFolder = "../";
+const connectorToRootFolder = "../../";
 
 const pathFromRootToDesiredDirectory =
   "YOUR_PATH_FROM_ROOT_TO_DESIRED_DIRECTORY_HERE";

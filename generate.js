@@ -1,3 +1,3 @@
-const generateDocumentation = require("./utils/generateDocumentation.js");
+const generateDocumentation = require("./utils/file-utils/generateDocumentation.js");
 
 generateDocumentation();

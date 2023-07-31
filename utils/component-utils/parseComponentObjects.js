@@ -1,8 +1,8 @@
-const getHash = require("./getHash");
-const getDescriptionFromApi = require("./getDescriptionFromApi");
-const findDocumentationObject = require("./findDocumentationObject");
+const getHash = require("../file-utils/getHash");
+const getDescription = require("../api-utils/getDescription");
+const findDocumentationObject = require("../file-utils/findDocumentationObject");
 
-const config = require("../config");
+const config = require("../../config");
 
 const parseComponentObjects = async (componentObject) => {
   const documentation = {
@@ -32,7 +32,7 @@ const parseComponentObjects = async (componentObject) => {
   // Parsing functions and variables should go here
 
   // Get the description from the OpenAI API
-  await getDescriptionFromApi(documentation, componentObject.code);
+  await getDescription(documentation, componentObject.code);
 
   return documentation;
 };

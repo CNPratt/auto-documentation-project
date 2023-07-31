@@ -1,4 +1,4 @@
-const getComponentCodeFromNode = require("./getComponentCodeFromNode");
+const getComponentCodeFromNode = require("../ast-utils/getComponentCodeFromNode");
 
 // Component objects look like this:
 // {

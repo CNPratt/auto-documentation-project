@@ -1,12 +1,16 @@
-const getFiles = require("./getFiles");
+const getFiles = require("../file-utils/getFiles");
 const getDocumentation = require("./getDocumentation");
 
-const config = require("../config");
+const config = require("../../config");
 
 const fs = require("fs");
 const path = require("path");
 const util = require("util");
-const { logErrorBgRed, logGreen, logNativeGreen } = require("./chalkUtils");
+const {
+  logErrorBgRed,
+  logGreen,
+  logNativeGreen,
+} = require("../console-utils/chalkUtils");
 
 const generateDocumentation = async () => {
   console.log("Generating documentation");
@@ -17,7 +21,7 @@ const generateDocumentation = async () => {
 
   const documentationFilePath = path.join(
     __dirname,
-    "../generated-documentation/generated-documentation.js"
+    "../../generated-documentation/generated-documentation.js"
   );
 
   // Convert the documentation object to a string representation
