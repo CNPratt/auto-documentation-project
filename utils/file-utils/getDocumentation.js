@@ -24,10 +24,11 @@ const getDocumentation = async () => {
     "../../generated-documentation/generated-documentation.js"
   );
 
+  // Turn the generated documentation into a a JSON string
+  const documentationJSON = JSON.stringify(documentation);
+
   // Convert the documentation object to a string representation
-  const jsCode = `module.exports = ${util.inspect(documentation, {
-    depth: null,
-  })};`;
+  const jsCode = `module.exports = ${documentationJSON};`;
 
   // Create a Buffer from the JavaScript code
   const buffer = Buffer.from(jsCode);
