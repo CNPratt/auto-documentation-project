@@ -1,12 +1,12 @@
-const createAstFromComponentNode = require("./createAstFromComponentNode");
+const createAstFromNodeFragment = require("./createAstFromNodeFragment");
 const generator = require("@babel/generator").default;
 
-const getComponentCodeFromNode = (node) => {
+const getCodeFromNode = (node) => {
   // Since we are receiving partial ASTs, we need to construct a full AST for each component
-  const constructedAst = createAstFromComponentNode(node);
+  const constructedAst = createAstFromNodeFragment(node);
 
   // Generate the code from the new AST
   return generator(constructedAst).code;
 };
 
-module.exports = getComponentCodeFromNode;
+module.exports = getCodeFromNode;
