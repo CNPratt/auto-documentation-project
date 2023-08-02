@@ -13,11 +13,10 @@ const handleNode = (identifier, nodeName, node, components) => {
     const hasJSX = nodeReturnsJsx(node);
 
     // If we have found a function, class, or arrow function that returns JSX, log it and add it to our components array
-    if (hasJSX) {
-      logCyan(`JSX found for ${nodeName}`);
-    }
 
     if (hasJSX) {
+      logCyan(`JSX found for ${nodeName}`);
+
       const componentObject = createComponentObject(nodeName, node);
       components.push(componentObject);
     }
