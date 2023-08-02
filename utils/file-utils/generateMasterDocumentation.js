@@ -2,6 +2,7 @@ const getFileDocumentation = require("./getFileDocumentation");
 const assembleComponents = require("../component-utils/assembleComponents");
 const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
 const babelParser = require("@babel/parser");
+const getHash = require("./getHash");
 const fs = require("fs");
 
 const config = require("../../config");
@@ -18,7 +19,24 @@ const generateMasterDocumentation = async (files) => {
     if (file.endsWith(".js")) {
       logYellow("Getting documentation for file:", file);
       try {
+        let thisFileData = {
+          filePath: file,
+          wholeFileSourceCode: "",
+          wholeFileSourceCodeHash: "",
+          componentObjectsArray: [],
+          functionObjectsArray: [],
+          variableObjectsArray: [],
+          importObjectsArray: [],
+          exportObjectsArray: [],
+        };
+
         const sourceCode = await fs.promises.readFile(file, "utf-8");
+
+        // Add source code for reference in future functions
+        thisFileData.wholeFileSourceCode = sourceCode;
+
+        // Generate and add whole file source code hash to add on doc objects for change checking
+        thisFileData.wholeFileSourceCodeHash = getHash(sourceCode);
 
         // Generate an AST from the source code
         const ast = babelParser.parse(sourceCode, {
@@ -29,9 +47,11 @@ const generateMasterDocumentation = async (files) => {
         // Log the AST to the console
         // logAst(ast);
 
-        const fileComponentObjects = assembleComponents(ast);
+        thisFileData.componentObjectsArray = assembleComponents(ast);
 
-        await getFileDocumentation(fileComponentObjects, masterDocument);
+        // const fileComponentObjects = assembleComponents(ast);
+
+        await getFileDocumentation(thisFileData, masterDocument);
       } catch (error) {
         logErrorRed(
           `Error reading or parsing ${file}. Error: ${error.message}`
