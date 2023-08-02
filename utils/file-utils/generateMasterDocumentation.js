@@ -1,6 +1,7 @@
 const getFileDocumentation = require("./getFileDocumentation");
-const assembleComponents = require("../component-utils/assembleComponents");
+const generateFileData = require("../component-utils/generateFileData");
 const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
+const findFileDocumentation = require("./findFileDocumentation");
 const babelParser = require("@babel/parser");
 const getHash = require("./getHash");
 const fs = require("fs");
@@ -8,7 +9,7 @@ const fs = require("fs");
 const config = require("../../config");
 
 const generateMasterDocumentation = async (files) => {
-  logYellow("Getting documentation");
+  logYellow("Getting file data");
 
   // Clear the updated components array
   config.updatedComponents = [];
@@ -17,7 +18,7 @@ const generateMasterDocumentation = async (files) => {
 
   for (const file of files) {
     if (file.endsWith(".js")) {
-      logYellow("Getting documentation for file:", file);
+      logYellow("Getting data for file:", file);
       try {
         let thisFileData = {
           filePath: file,
@@ -26,6 +27,7 @@ const generateMasterDocumentation = async (files) => {
           componentObjectsArray: [],
           functionObjectsArray: [],
           variableObjectsArray: [],
+          classObjectsArray: [],
           importObjectsArray: [],
           exportObjectsArray: [],
         };
@@ -47,9 +49,26 @@ const generateMasterDocumentation = async (files) => {
         // Log the AST to the console
         // logAst(ast);
 
-        thisFileData.componentObjectsArray = assembleComponents(ast);
+        const matchedFileDocumentationObject = findFileDocumentation(
+          file,
+          thisFileData.wholeFileSourceCodeHash
+        );
 
-        // const fileComponentObjects = assembleComponents(ast);
+        if (!matchedFileDocumentationObject) {
+          const generatedFileData = generateFileData(ast);
+
+          thisFileData.componentObjectsArray =
+            generatedFileData.componentsArray;
+          thisFileData.importObjectsArray = generatedFileData.importsArray;
+          thisFileData.exportObjectsArray = generatedFileData.exportsArray;
+          thisFileData.functionObjectsArray =
+            generatedFileData.globalFunctionsArray;
+          thisFileData.variableObjectsArray =
+            generatedFileData.globalVariablesArray;
+          thisFileData.classObjectsArray = generatedFileData.globalClassesArray;
+        } else {
+          thisFileData = { ...thisFileData, ...matchedFileDocumentationObject };
+        }
 
         await getFileDocumentation(thisFileData, masterDocument);
       } catch (error) {

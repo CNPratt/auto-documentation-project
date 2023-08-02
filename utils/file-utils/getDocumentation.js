@@ -35,16 +35,15 @@ const getDocumentation = async () => {
 
   // Make sure the error is logged if there is one writing the file
   try {
-    if (config.updatedComponents.length > 0) {
+    if (config.updatedComponents.length || config.updatedOtherFiles.length) {
       // Write the buffer to the documentation.js file
       fs.writeFileSync(documentationFilePath, buffer);
 
       logGreen("Documentation successfully generated and saved!");
       logNativeGreen("Updated components:", config.updatedComponents);
+      logNativeGreen("Updated other files:", config.updatedOtherFiles);
     } else {
-      logGreen(
-        "No components updated. Previous documentation remains unchanged."
-      );
+      logGreen("No files updated. Previous documentation remains unchanged.");
     }
   } catch (e) {
     logErrorBgRed("Error writing documentation file:", e);
