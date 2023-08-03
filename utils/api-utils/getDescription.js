@@ -1,5 +1,5 @@
-const promptUserForApi = require("../console-utils/promptUserForApi");
-const getDescriptionFromAPI = require("./getDescriptionFromApi");
+const userInputSequence = require("../console-utils/userInputSequence");
+const postPromptToApi = require("./postPromptToApi");
 const chalkUtils = require("../console-utils/chalkUtils");
 const logErrorRed = chalkUtils.logErrorRed;
 
@@ -7,16 +7,16 @@ const config = require("../../config");
 
 const getDescription = async (documentation, sourceCode) => {
   // Get the component code for description generation
-  const componentCode = `${config.prefaceStatement}: ${documentation.component}\n${sourceCode}`;
+  const componentCode = `${config.prefaceStatement}: ${documentation.name}\n${sourceCode}`;
 
-  console.log("Getting description for component:", documentation.component);
+  console.log("Getting description for component:", documentation.name);
 
   if (config.useOpenAI) {
     try {
-      if (config.enableUserPrompts) {
-        await promptUserForApi(documentation, componentCode);
+      if (config.enableUserInputSequence) {
+        await userInputSequence(documentation, componentCode);
       } else {
-        documentation.description = await getDescriptionFromAPI(componentCode);
+        documentation.description = await postPromptToApi(componentCode);
       }
     } catch (error) {
       logErrorRed("Error fetching description:", error.message);

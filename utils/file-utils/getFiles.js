@@ -8,7 +8,7 @@ const getFiles = async (dir, baseDir = null) => {
   const dirents = await fs.promises.readdir(fullDir, { withFileTypes: true });
   const files = await Promise.all(
     dirents.map((dirent) => {
-      if (dirent.name === "node_modules") {
+      if (dirent.name === "node_modules" || dirent.name === "build") {
         return [];
       }
 

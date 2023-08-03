@@ -5,10 +5,10 @@ const { logErrorRed, logMagenta } = require("../console-utils/chalkUtils");
 const config = require("../../config");
 
 // Function to send the code to the ChatGPT API and obtain the description
-const getDescriptionFromAPI = async (componentCode) => {
+const postPromptToApi = async (prompt) => {
   const request = {
     model: config.model,
-    messages: [{ role: "user", content: componentCode }],
+    messages: [{ role: "user", content: prompt }],
   };
 
   if (config.useMaxTokens) {
@@ -39,7 +39,7 @@ const getDescriptionFromAPI = async (componentCode) => {
         // Check if the response data has the expected data
         if (responseData.choices && responseData.choices[0]) {
           // Log the description to the console if the user prompts are enabledß
-          if (config.enableUserPrompts) {
+          if (config.enableUserInputSequence) {
             logMagenta(
               "Description: " + responseData.choices[0].message.content
             );
@@ -65,4 +65,4 @@ const getDescriptionFromAPI = async (componentCode) => {
   });
 };
 
-module.exports = getDescriptionFromAPI;
+module.exports = postPromptToApi;

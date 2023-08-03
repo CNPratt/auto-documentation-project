@@ -1,57 +1,28 @@
-const getFileDocumentation = require("./getFileDocumentation");
-const assembleComponents = require("../component-utils/assembleComponents");
 const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
-const babelParser = require("@babel/parser");
-const getHash = require("./getHash");
-const fs = require("fs");
+const FileDocument = require("../../classes/documents/FileDocument");
 
 const config = require("../../config");
 
 const generateMasterDocumentation = async (files) => {
-  logYellow("Getting documentation");
+  logYellow("Getting file data");
 
   // Clear the updated components array
   config.updatedComponents = [];
+  config.updatedFiles = [];
 
   const masterDocument = [];
 
   for (const file of files) {
     if (file.endsWith(".js")) {
-      logYellow("Getting documentation for file:", file);
+      logYellow("Getting data for file:", file);
+
       try {
-        let thisFileData = {
-          filePath: file,
-          wholeFileSourceCode: "",
-          wholeFileSourceCodeHash: "",
-          componentObjectsArray: [],
-          functionObjectsArray: [],
-          variableObjectsArray: [],
-          importObjectsArray: [],
-          exportObjectsArray: [],
-        };
+        const fileDocumentation = new FileDocument(file);
 
-        const sourceCode = await fs.promises.readFile(file, "utf-8");
+        await fileDocumentation.initializeFileData();
+        await fileDocumentation.initializeFileDocument();
 
-        // Add source code for reference in future functions
-        thisFileData.wholeFileSourceCode = sourceCode;
-
-        // Generate and add whole file source code hash to add on doc objects for change checking
-        thisFileData.wholeFileSourceCodeHash = getHash(sourceCode);
-
-        // Generate an AST from the source code
-        const ast = babelParser.parse(sourceCode, {
-          sourceType: "module",
-          plugins: ["jsx"],
-        });
-
-        // Log the AST to the console
-        // logAst(ast);
-
-        thisFileData.componentObjectsArray = assembleComponents(ast);
-
-        // const fileComponentObjects = assembleComponents(ast);
-
-        await getFileDocumentation(thisFileData, masterDocument);
+        masterDocument.push(fileDocumentation);
       } catch (error) {
         logErrorRed(
           `Error reading or parsing ${file}. Error: ${error.message}`

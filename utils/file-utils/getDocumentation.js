@@ -17,6 +17,7 @@ const getDocumentation = async () => {
   const files = await getFiles(
     path.join(__dirname, config.relativeDirectoryConnector)
   );
+
   const documentation = await generateMasterDocumentation(files);
 
   const documentationFilePath = path.join(
@@ -35,16 +36,22 @@ const getDocumentation = async () => {
 
   // Make sure the error is logged if there is one writing the file
   try {
-    if (config.updatedComponents.length > 0) {
+    if (config.updatedFiles.length) {
       // Write the buffer to the documentation.js file
       fs.writeFileSync(documentationFilePath, buffer);
 
       logGreen("Documentation successfully generated and saved!");
+
+      logNativeGreen("Updated files:", config.updatedFiles);
+      logNativeGreen("Number of files updated:", config.updatedFiles.length);
+
       logNativeGreen("Updated components:", config.updatedComponents);
-    } else {
-      logGreen(
-        "No components updated. Previous documentation remains unchanged."
+      logNativeGreen(
+        "Number of components updated:",
+        config.updatedComponents.length
       );
+    } else {
+      logGreen("No files updated. Previous documentation remains unchanged.");
     }
   } catch (e) {
     logErrorBgRed("Error writing documentation file:", e);

@@ -19,7 +19,7 @@ const findFileDocumentation = (filePath, fileHash) => {
 
     // Now you can use the documentationData as needed
     matchingObject = documentationData.find((doc) => {
-      return doc.filePath === filePath && doc.fileSourceCodeHash === fileHash;
+      return doc.filePath === filePath && doc.sourceCodeHash === fileHash;
     });
   }
 

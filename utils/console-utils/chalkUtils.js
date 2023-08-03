@@ -14,7 +14,7 @@ const logGreen = (message, secondaryMessage) =>
 
 const logNativeGreen = (message, secondaryMessage) =>
   // log component green without chalk with the escape sequence
-  console.log("\x1b[32m", "Updated components:", secondaryMessage);
+  console.log("\x1b[32m", message, secondaryMessage);
 
 const logYellow = (message, secondaryMessage) =>
   generateChalkLog("log", "yellow", message, secondaryMessage);
