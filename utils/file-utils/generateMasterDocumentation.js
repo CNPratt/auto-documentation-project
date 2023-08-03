@@ -2,7 +2,6 @@ const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
 const FileDocument = require("../../classes/documents/FileDocument");
 
 const config = require("../../config");
-const FileData = require("../../classes/data/FileData");
 
 const generateMasterDocumentation = async (files) => {
   logYellow("Getting file data");
@@ -18,14 +17,10 @@ const generateMasterDocumentation = async (files) => {
       logYellow("Getting data for file:", file);
 
       try {
-        let thisFileData = new FileData(file);
+        const fileDocumentation = new FileDocument(file);
 
-        await thisFileData.initializeFileData();
-
-        await thisFileData.generateFileData();
-
-        const fileDocumentation = new FileDocument(thisFileData);
-        await fileDocumentation.initializeFileDocument(thisFileData.components);
+        await fileDocumentation.initializeFileData();
+        await fileDocumentation.initializeFileDocument();
 
         masterDocument.push(fileDocumentation);
       } catch (error) {
