@@ -10,8 +10,8 @@ const importTraversalMap = {
       const importedName = specifier.imported ? specifier.imported.name : null; // The name of the imported variable as defined in the module
       const localName = specifier.local.name; // The name of the imported variable in the local scope
 
-      // Add the import information to the importsArray
-      this.importsArray.push({
+      // Add the import information to the imports array
+      this.imports.push({
         source,
         importedName,
         localName,

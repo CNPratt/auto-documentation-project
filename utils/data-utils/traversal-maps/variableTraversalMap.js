@@ -5,7 +5,7 @@ const {
   logErrorRed,
 } = require("../../console-utils/chalkUtils");
 const getCodeFromNode = require("../../ast-utils/getCodeFromNode");
-const ComponentData = require("../../../classes/data/ComponentData");
+const ComponentData = require("../../../classes/data/code-blocks/CodeBlockData");
 
 const variableTraversalMap = {
   VariableDeclaration(path) {
@@ -17,22 +17,30 @@ const variableTraversalMap = {
     try {
       if (returnJsx(path.node.declarations[0].init)) {
         logCyan(`JSX found for ${nodeName}`);
-        if (
-          path.node.declarations[0].init &&
-          path.node.declarations[0].init.type === "ArrowFunctionExpression"
-        ) {
-          const componentObject = new ComponentData(nodeName, path.node);
-          this.componentsArray.push(componentObject);
-        }
+
+        const componentObject = new ComponentData(nodeName, path.node);
+        this.components.push(componentObject);
       } else {
         logWhite(`No JSX found for ${nodeName}`);
-        if (path.scope.path.type === "Program") {
-          logWhite(`Adding ${nodeName} to global variables array`);
-          this.globalVariablesArray.push({
-            name: nodeName,
-            type: identifier,
-            sourceCode: getCodeFromNode(path.node),
-          });
+        if (path.parentPath.type === "Program") {
+          if (
+            path.node.declarations[0].init &&
+            path.node.declarations[0].init.type === "ArrowFunctionExpression"
+          ) {
+            logWhite(`Adding ${nodeName} to global functions array`);
+            this.functions.push({
+              name: nodeName,
+              type: identifier,
+              sourceCode: getCodeFromNode(path.node),
+            });
+          } else {
+            logWhite(`Adding ${nodeName} to global variables array`);
+            this.variables.push({
+              name: nodeName,
+              type: identifier,
+              sourceCode: getCodeFromNode(path.node),
+            });
+          }
         }
       }
     } catch (error) {

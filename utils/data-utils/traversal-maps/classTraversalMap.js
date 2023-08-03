@@ -5,7 +5,7 @@ const {
   logErrorRed,
 } = require("../../console-utils/chalkUtils");
 const getCodeFromNode = require("../../ast-utils/getCodeFromNode");
-const ComponentData = require("../../../classes/data/ComponentData");
+const ComponentData = require("../../../classes/data/code-blocks/CodeBlockData");
 
 const classTraversalMap = {
   ClassDeclaration(path) {
@@ -18,12 +18,12 @@ const classTraversalMap = {
       if (returnJsx(path.node.body)) {
         logCyan(`JSX found for ${nodeName}`);
         const componentObject = new ComponentData(nodeName, path.node);
-        this.componentsArray.push(componentObject);
+        this.components.push(componentObject);
       } else {
         logWhite(`No JSX found for ${nodeName}`);
-        if (path.scope.path.type === "Program") {
+        if (path.parentPath.type === "Program") {
           logWhite(`Adding ${nodeName} to global classes array`);
-          this.globalClassesArray.push({
+          this.classes.push({
             name: nodeName,
             type: identifier,
             sourceCode: getCodeFromNode(path.node),

@@ -1,10 +1,12 @@
+const getHash = require("../../utils/file-utils/getHash");
+
 class ComponentDocument {
-  constructor(name, sourceCodeHash) {
+  constructor(name, sourceCode) {
     this.name = name;
     this.variables = [];
     this.functions = [];
     this.description = "";
-    this.sourceCodeHash = sourceCodeHash;
+    this.sourceCodeHash = getHash(sourceCode);
   }
 }
 
