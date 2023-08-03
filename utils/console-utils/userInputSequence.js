@@ -1,8 +1,9 @@
 const readline = require("readline");
-const getDescriptionFromAPI = require("../api-utils/getDescriptionFromApi");
+const postPromptToApi = require("../api-utils/postPromptToApi");
 const chalk = require("chalk");
 
-const promptUserForApi = async (documentation, componentCode) => {
+// Function to ask the user if they want to make the API call for this piece of code
+const userInputSequence = async (documentation, prompt) => {
   let counter = 0;
   let shouldContinue = false;
 
@@ -13,11 +14,11 @@ const promptUserForApi = async (documentation, componentCode) => {
 
   while (!shouldContinue) {
     const originalQuestion = chalk.bgGreen(
-      `Make API call for component: ${documentation.component}? (yes/no) `
+      `Make API call for component: ${documentation.name}? (yes/no) `
     );
 
     const regenerateQuestion = chalk.bgGreen(
-      `Make another API call for component: ${documentation.component}? (yes/no) `
+      `Make another API call for component: ${documentation.name}? (yes/no) `
     );
     const question = counter === 0 ? originalQuestion : regenerateQuestion;
     counter++;
@@ -29,7 +30,7 @@ const promptUserForApi = async (documentation, componentCode) => {
       });
     });
     if (makeApiCall) {
-      documentation.description = await getDescriptionFromAPI(componentCode);
+      documentation.description = await postPromptToApi(prompt);
       const coloredQuestion = chalk.bgGreen(
         `Would you like to save the description? (yes/no) `
       );
@@ -50,4 +51,4 @@ const promptUserForApi = async (documentation, componentCode) => {
   rl.close();
 };
 
-module.exports = promptUserForApi;
+module.exports = userInputSequence;

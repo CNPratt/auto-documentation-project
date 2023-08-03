@@ -1,24 +1,22 @@
 const getHash = require("../file-utils/getHash");
 const getDescription = require("../api-utils/getDescription");
 const findComponentDocumentationObject = require("../file-utils/findComponentDocumentationObject");
+const ComponentDocument = require("../../classes//documents/ComponentDocument");
 
 const config = require("../../config");
 
 const parseComponentObjects = async (componentObject, previousFileDoc) => {
-  const componentDocumentation = {
-    component: componentObject.name,
-    variables: [],
-    functions: [],
-    description: "",
-    sourceCodeHash: getHash(componentObject.code),
-  };
+  const componentDocumentation = new ComponentDocument(
+    componentObject.name,
+    componentObject.code
+  );
 
   const previousFileDocComponents =
     (previousFileDoc && previousFileDoc.components) || [];
 
   // Check if there is a matching object in the previously generated documentations
   const matchedObject = findComponentDocumentationObject(
-    componentDocumentation.component,
+    componentDocumentation.name,
     previousFileDocComponents
   );
 
@@ -33,7 +31,7 @@ const parseComponentObjects = async (componentObject, previousFileDoc) => {
 
   // If the encoded source code does not match the encoded source code in the documentation object, continue with parsing
   // and add the component name to the list of updated components
-  config.updatedComponents.push(componentDocumentation.component);
+  config.updatedComponents.push(componentDocumentation.name);
 
   // Parsing functions and variables should go here
 

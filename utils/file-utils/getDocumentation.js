@@ -17,6 +17,7 @@ const getDocumentation = async () => {
   const files = await getFiles(
     path.join(__dirname, config.relativeDirectoryConnector)
   );
+
   const documentation = await generateMasterDocumentation(files);
 
   const documentationFilePath = path.join(

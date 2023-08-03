@@ -6,9 +6,9 @@ const findComponentDocumentationObject = (
   let matchingObject = null;
 
   // Now you can use the documentationData as needed
-  matchingObject = fileComponentsData.find(
-    (doc) => doc.component === componentName
-  );
+  matchingObject = fileComponentsData.find((doc) => {
+    return doc.name === componentName;
+  });
 
   return matchingObject;
 };

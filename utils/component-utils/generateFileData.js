@@ -1,21 +1,19 @@
 const babelTraverse = require("@babel/traverse");
-const componentExtractionMap = require("../data-utils/traversal-maps/componentExtractionMap");
-const importExtractionMap = require("../data-utils/traversal-maps/importExtractionMap");
+const functionTraversalMap = require("../data-utils/traversal-maps/functionTraversalMap");
+const classTraversalMap = require("../data-utils/traversal-maps/classTraversalMap");
+const variableTraversalMap = require("../data-utils/traversal-maps/variableTraversalMap");
+const importTraversalMap = require("../data-utils/traversal-maps/importTraversalMap");
 
-const generateFileData = (ast) => {
-  const fileData = {
-    globalFunctionsArray: [],
-    globalVariablesArray: [],
-    globalClassesArray: [],
-    componentsArray: [],
-    importsArray: [],
-    exportsArray: [],
-  };
-
-  // Do separate traversals to get different file information
-  // This may be technically inefficient, but it's easier to read and maintain
-  babelTraverse.default(ast, componentExtractionMap, null, fileData);
-  babelTraverse.default(ast, importExtractionMap, null, fileData);
+const generateFileData = (ast, fileData) => {
+  // combine all traversal maps into one with object
+  const fileTraversalMap = Object.assign(
+    {},
+    functionTraversalMap,
+    classTraversalMap,
+    variableTraversalMap,
+    importTraversalMap
+  );
+  babelTraverse.default(ast, fileTraversalMap, null, fileData);
 
   return fileData;
 };

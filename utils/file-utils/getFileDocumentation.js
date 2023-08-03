@@ -1,20 +1,15 @@
 const parseComponentObjects = require("../component-utils/parseComponentObjects");
 const findFileDocumentation = require("./findFileDocumentation");
+const FileDocument = require("../../classes/documents/FileDocument");
 const chalkUtils = require("../console-utils/chalkUtils");
 const config = require("../../config");
 const logErrorRed = chalkUtils.logErrorRed;
 
 const getFileDocumentation = async (fileDataObject, masterDocument) => {
-  const fileDocumentation = {
-    filePath: fileDataObject.filePath,
-    fileSourceCodeHash: fileDataObject.wholeFileSourceCodeHash,
-    components: [],
-    classes: [],
-    functions: [],
-    variables: [],
-    imports: [],
-    exports: [],
-  };
+  const fileDocumentation = new FileDocument(
+    fileDataObject.filePath,
+    fileDataObject.wholeFileSourceCodeHash
+  );
 
   fileDocumentation.imports = fileDataObject.importObjectsArray;
   fileDocumentation.exports = fileDataObject.exportObjectsArray;
@@ -31,29 +26,29 @@ const getFileDocumentation = async (fileDataObject, masterDocument) => {
   // If a matching object was found and the encoded source code matches the encoded source code
   // Just return the previous documentation object early instead of parsing it again
   if (!matchedFileDocumentationObject) {
-    if (fileDataObject.componentObjectsArray.length) {
-      // Parse the documentation for each component in the file
-      for (const componentObject of fileDataObject.componentObjectsArray) {
-        try {
-          const componentDocToAdd = await parseComponentObjects(
-            componentObject,
-            matchedFileDocumentationObject
-          );
+    // Parse the documentation for each component in the file
+    for (const componentObject of fileDataObject.componentObjectsArray) {
+      try {
+        const componentDocToAdd = await parseComponentObjects(
+          componentObject,
+          matchedFileDocumentationObject
+        );
 
-          fileDocumentation.components.push(componentDocToAdd);
+        fileDocumentation.components.push(componentDocToAdd);
 
-          // console.log(parsedDocumentation);
-          masterDocument.push(fileDocumentation);
-        } catch (error) {
-          logErrorRed(
-            `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
-          );
-        }
+        // console.log(parsedDocumentation);
+        // masterDocument.push(fileDocumentation);
+      } catch (error) {
+        logErrorRed(
+          `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
+        );
       }
-    } else {
-      config.updatedOtherFiles.push(fileDocumentation.filePath);
-      masterDocument.push(fileDocumentation);
     }
+    if (!fileDataObject.componentObjectsArray.length) {
+      config.updatedOtherFiles.push(fileDocumentation.filePath);
+    }
+
+    masterDocument.push(fileDocumentation);
   } else {
     masterDocument.push(matchedFileDocumentationObject);
   }

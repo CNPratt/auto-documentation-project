@@ -1,6 +1,6 @@
 const getCodeFromNode = require("../../ast-utils/getCodeFromNode");
 
-const importExtractionMap = {
+const importTraversalMap = {
   ImportDeclaration(path) {
     const source = path.node.source.value; // The module being imported from
     const specifiers = path.node.specifiers; // The variables being imported
@@ -21,4 +21,4 @@ const importExtractionMap = {
   },
 };
 
-module.exports = importExtractionMap;
+module.exports = importTraversalMap;

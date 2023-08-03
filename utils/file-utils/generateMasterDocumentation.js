@@ -7,30 +7,23 @@ const getHash = require("./getHash");
 const fs = require("fs");
 
 const config = require("../../config");
+const FileData = require("../../classes/data/FileData");
 
 const generateMasterDocumentation = async (files) => {
   logYellow("Getting file data");
 
   // Clear the updated components array
   config.updatedComponents = [];
+  config.updatedOtherFiles = [];
 
   const masterDocument = [];
 
   for (const file of files) {
     if (file.endsWith(".js")) {
       logYellow("Getting data for file:", file);
+
       try {
-        let thisFileData = {
-          filePath: file,
-          wholeFileSourceCode: "",
-          wholeFileSourceCodeHash: "",
-          componentObjectsArray: [],
-          functionObjectsArray: [],
-          variableObjectsArray: [],
-          classObjectsArray: [],
-          importObjectsArray: [],
-          exportObjectsArray: [],
-        };
+        let thisFileData = new FileData(file);
 
         const sourceCode = await fs.promises.readFile(file, "utf-8");
 
@@ -55,7 +48,7 @@ const generateMasterDocumentation = async (files) => {
         );
 
         if (!matchedFileDocumentationObject) {
-          const generatedFileData = generateFileData(ast);
+          const generatedFileData = generateFileData(ast, thisFileData);
 
           thisFileData.componentObjectsArray =
             generatedFileData.componentsArray;
