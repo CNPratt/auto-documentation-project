@@ -1,4 +1,4 @@
-const getCodeFromNode = require("../../ast-utils/getCodeFromNode");
+const getCodeFromNode = require("../../../ast-utils/getCodeFromNode");
 
 const importTraversalMap = {
   ImportDeclaration(path) {

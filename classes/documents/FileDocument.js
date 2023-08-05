@@ -1,23 +1,21 @@
 const config = require("../../config");
 const CodeBlockDocument = require("./CodeBlockDocument");
-const findFileDocumentation = require("../../utils/file-utils/findFileDocumentation");
 const {
   logErrorRed,
   logGreen,
   logBlue,
   logCyan,
 } = require("../../utils/console-utils/chalkUtils");
-const findComponentDocumentationObject = require("../../utils/file-utils/findComponentDocumentationObject");
 const fs = require("fs");
 const getHash = require("../../utils/file-utils/getHash");
 const babelTraverse = require("@babel/traverse");
-const functionTraversalMap = require("../../utils/data-utils/traversal-maps/functionTraversalMap");
-const classTraversalMap = require("../../utils/data-utils/traversal-maps/classTraversalMap");
-const variableTraversalMap = require("../../utils/data-utils/traversal-maps/variableTraversalMap");
-const importTraversalMap = require("../../utils/data-utils/traversal-maps/importTraversalMap");
 const babelParser = require("@babel/parser");
 const getDescription = require("../../utils/api-utils/getDescription");
 const path = require("path");
+const fileFunctionTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileFunctionTraversalMap");
+const fileClassTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileClassTraversalMap");
+const fileVariableTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileVariableTraversalMap");
+const importTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/importTraversalMap");
 
 class FileDocument {
   constructor(filePath) {
@@ -75,9 +73,9 @@ class FileDocument {
     // combine all traversal maps into one with object
     const fileTraversalMap = Object.assign(
       {},
-      functionTraversalMap,
-      classTraversalMap,
-      variableTraversalMap,
+      fileFunctionTraversalMap(CodeBlockDocument),
+      fileClassTraversalMap(CodeBlockDocument),
+      fileVariableTraversalMap(CodeBlockDocument),
       importTraversalMap
     );
 
@@ -123,23 +121,17 @@ class FileDocument {
     // Parse the documentation for each component in the file
     for (const componentDocument of this.components) {
       try {
-        const previousMismatchArray =
-          this.previousFileMismatchDocumentation &&
-          this.previousFileMismatchDocumentation.components;
-
         // Check if there is already a component documentation object for this component
         let matchedComponentDocumentationObject = null;
 
-        if (previousMismatchArray) {
-          matchedComponentDocumentationObject =
-            await componentDocument.findComponentDocumentationObject(
-              this.previousFileMismatchDocumentation.components
-            );
-        }
+        matchedComponentDocumentationObject =
+          await componentDocument.findComponentDocumentationObject(
+            this.previousFileMismatchDocumentation
+          );
 
         // If there is a matched component documentation object, push it instead of generating a new one
         if (matchedComponentDocumentationObject) {
-          this.components.push(matchedComponentDocumentationObject);
+          Object.assign(componentDocument, matchedComponentDocumentationObject);
         } else {
           // Get the description from the OpenAI API
           await getDescription(componentDocument, componentDocument.code);
