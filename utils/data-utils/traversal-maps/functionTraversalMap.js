@@ -6,7 +6,7 @@ const {
   logBlue,
 } = require("../../console-utils/chalkUtils");
 const getCodeFromNode = require("../../ast-utils/getCodeFromNode");
-const ComponentData = require("../../../classes/data/code-blocks/CodeBlockData");
+const CodeBlockDocument = require("../../../classes/documents/CodeBlockDocument");
 
 // Exract each visitor to a reparate object
 
@@ -20,7 +20,10 @@ const functionTraversalMap = {
     try {
       if (returnJsx(path.node.body)) {
         logCyan(`JSX found for ${nodeName}`);
-        const componentObject = new ComponentData(nodeName, path.node);
+        const componentObject = new CodeBlockDocument(
+          nodeName,
+          getCodeFromNode(path.node)
+        );
         this.components.push(componentObject);
       } else {
         logWhite(`No JSX found for ${nodeName}`);
