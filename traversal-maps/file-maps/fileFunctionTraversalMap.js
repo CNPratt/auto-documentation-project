@@ -1,11 +1,12 @@
-const returnJsx = require("../../../ast-utils/nodeReturnsJsx");
+const returnJsx = require("../../utils/ast-utils/nodeReturnsJsx");
 const {
   logWhite,
   logCyan,
   logErrorRed,
   logBlue,
-} = require("../../../console-utils/chalkUtils");
-const getCodeFromNode = require("../../../ast-utils/getCodeFromNode");
+} = require("../../utils/console-utils/chalkUtils");
+const getCodeFromNode = require("../../utils/ast-utils/getCodeFromNode");
+const { get } = require("@babel/traverse/lib/path/family");
 
 // Exract each visitor to a reparate object
 
@@ -25,6 +26,7 @@ const fileFunctionTraversalMap = (type) => {
           this.components.push(blockDocument);
         } else {
           logWhite(`No JSX found for ${nodeName}`);
+
           if (path.parentPath.type === "Program" || this.isBlock) {
             logWhite(`Adding ${nodeName} to global functions array`);
             this.functions.push(blockDocument);

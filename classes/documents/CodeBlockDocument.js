@@ -1,9 +1,7 @@
 const getHash = require("../../utils/file-utils/getHash");
 const babelTraverse = require("@babel/traverse");
 const babelParser = require("@babel/parser");
-const fileFunctionTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileFunctionTraversalMap");
-const fileClassTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileClassTraversalMap");
-const fileVariableTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileVariableTraversalMap");
+const innerCodeTraversalMap = require("../../traversal-maps/codeblock-maps/innerCodeExtractionTraversalMap");
 
 class CodeBlockDocument {
   constructor(name, sourceCode) {
@@ -16,7 +14,7 @@ class CodeBlockDocument {
     // temp
     this.isBlock = true;
 
-    // this.initializeComponentDocument(sourceCode);
+    this.initializeComponentDocument(sourceCode);
   }
 
   initializeComponentDocument = async (sourceCode) => {
@@ -26,18 +24,15 @@ class CodeBlockDocument {
       plugins: ["jsx"],
     });
 
-    // combine all traversal maps into one with object
-    const componentTraversalMap = Object.assign(
-      {},
-      fileFunctionTraversalMap(CodeBlockDocument),
-      fileClassTraversalMap(CodeBlockDocument),
-      fileVariableTraversalMap(CodeBlockDocument)
-    );
-
     // Traverse the AST and populate the file data by calling the functions in the traversal map
     // This object is passed as the fourth argument to the traverse function so
     // that the functions in the traversal map can access the FileDocument object
-    babelTraverse.default(ast, componentTraversalMap, null, this);
+    babelTraverse.default(
+      ast,
+      innerCodeTraversalMap(CodeBlockDocument, this.name),
+      null,
+      this
+    );
   };
 
   // Function to find the object with the matching component name in the generated documentationData array

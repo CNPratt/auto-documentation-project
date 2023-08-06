@@ -1,10 +1,10 @@
-const returnJsx = require("../../../ast-utils/nodeReturnsJsx");
+const returnJsx = require("../../utils/ast-utils/nodeReturnsJsx");
 const {
   logWhite,
   logCyan,
   logErrorRed,
-} = require("../../../console-utils/chalkUtils");
-const getCodeFromNode = require("../../../ast-utils/getCodeFromNode");
+} = require("../../utils/console-utils/chalkUtils");
+const getCodeFromNode = require("../../utils/ast-utils/getCodeFromNode");
 
 const fileVariableTraversalMap = (type) => {
   return {
@@ -23,6 +23,7 @@ const fileVariableTraversalMap = (type) => {
           this.components.push(blockDocument);
         } else {
           logWhite(`No JSX found for ${nodeName}`);
+
           if (path.parentPath.type === "Program" || this.isBlock) {
             if (
               path.node.declarations[0].init &&

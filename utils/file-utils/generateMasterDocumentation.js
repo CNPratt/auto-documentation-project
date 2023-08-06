@@ -20,7 +20,6 @@ const generateMasterDocumentation = async (files) => {
         const fileDocumentation = new FileDocument(file);
 
         await fileDocumentation.initializeFileData();
-        // await fileDocumentation.initializeFileDocument();
 
         masterDocument.push(fileDocumentation);
       } catch (error) {

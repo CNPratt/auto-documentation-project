@@ -12,10 +12,10 @@ const babelTraverse = require("@babel/traverse");
 const babelParser = require("@babel/parser");
 const getDescription = require("../../utils/api-utils/getDescription");
 const path = require("path");
-const fileFunctionTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileFunctionTraversalMap");
-const fileClassTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileClassTraversalMap");
-const fileVariableTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/fileVariableTraversalMap");
-const importTraversalMap = require("../../utils/data-utils/traversal-maps/file-maps/importTraversalMap");
+const fileFunctionTraversalMap = require("../../traversal-maps/file-maps/fileFunctionTraversalMap");
+const fileClassTraversalMap = require("../../traversal-maps/file-maps/fileClassTraversalMap");
+const fileVariableTraversalMap = require("../../traversal-maps/file-maps/fileVariableTraversalMap");
+const importTraversalMap = require("../../traversal-maps/file-maps/importTraversalMap");
 
 class FileDocument {
   constructor(filePath) {
