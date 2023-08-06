@@ -27,7 +27,12 @@ const fileFunctionTraversalMap = (type) => {
         } else {
           logWhite(`No JSX found for ${nodeName}`);
 
-          if (path.parentPath.type === "Program" || this.isBlock) {
+          if (
+            path.parentPath.type === "Program" ||
+            (this.isBlock &&
+              this.bindingKeys &&
+              this.bindingKeys.includes(nodeName))
+          ) {
             logWhite(`Adding ${nodeName} to global functions array`);
             this.functions.push(blockDocument);
           }

@@ -6,6 +6,8 @@ const {
   logErrorRed,
   logCyan,
 } = require("../../utils/console-utils/chalkUtils");
+const createAstFromNodeFragment = require("../../utils/ast-utils/createAstFromNodeFragment");
+const babelTraverse = require("@babel/traverse").default;
 
 const innerCodeTraversalMap = (type, codeName) => {
   const combinedTraversalMap = Object.assign(
@@ -20,7 +22,15 @@ const innerCodeTraversalMap = (type, codeName) => {
       if (path.parentPath.type === "Program") {
         logCyan(`Found inner code for ${codeName}`);
 
-        path.traverse(combinedTraversalMap, context);
+        // Get the scope of the current function
+        const { scope } = path;
+
+        // Get the bindings within the scope, which include variables, function declarations, etc.
+        const bindings = scope.bindings;
+
+        const bindingKeys = Object.keys(bindings);
+
+        path.traverse(combinedTraversalMap, { ...context, bindingKeys });
       }
     } catch (error) {
       logErrorRed(`Error parsing inner code`, error.message);

@@ -19,12 +19,23 @@ const fileVariableTraversalMap = (type) => {
 
         if (returnJsx(path.node.declarations[0].init)) {
           logCyan(`JSX found for ${nodeName}`);
-
-          this.components.push(blockDocument);
+          if (
+            path.parentPath.type === "Program" ||
+            (this.isBlock &&
+              this.bindingKeys &&
+              this.bindingKeys.includes(nodeName))
+          ) {
+            this.components.push(blockDocument);
+          }
         } else {
           logWhite(`No JSX found for ${nodeName}`);
 
-          if (path.parentPath.type === "Program" || this.isBlock) {
+          if (
+            path.parentPath.type === "Program" ||
+            (this.isBlock &&
+              this.bindingKeys &&
+              this.bindingKeys.includes(nodeName))
+          ) {
             if (
               path.node.declarations[0].init &&
               path.node.declarations[0].init.type === "ArrowFunctionExpression"
