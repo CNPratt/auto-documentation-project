@@ -1,17 +1,21 @@
 const config = require("../../config");
 const CodeBlockDocument = require("./CodeBlockDocument");
-const findFileDocumentation = require("../../utils/file-utils/findFileDocumentation");
-const { logErrorRed } = require("../../utils/console-utils/chalkUtils");
-const findComponentDocumentationObject = require("../../utils/file-utils/findComponentDocumentationObject");
+const {
+  logErrorRed,
+  logGreen,
+  logBlue,
+  logCyan,
+} = require("../../utils/console-utils/chalkUtils");
 const fs = require("fs");
 const getHash = require("../../utils/file-utils/getHash");
 const babelTraverse = require("@babel/traverse");
-const functionTraversalMap = require("../../utils/data-utils/traversal-maps/functionTraversalMap");
-const classTraversalMap = require("../../utils/data-utils/traversal-maps/classTraversalMap");
-const variableTraversalMap = require("../../utils/data-utils/traversal-maps/variableTraversalMap");
-const importTraversalMap = require("../../utils/data-utils/traversal-maps/importTraversalMap");
 const babelParser = require("@babel/parser");
 const getDescription = require("../../utils/api-utils/getDescription");
+const path = require("path");
+const fileFunctionTraversalMap = require("../../traversal-maps/file-maps/fileFunctionTraversalMap");
+const fileClassTraversalMap = require("../../traversal-maps/file-maps/fileClassTraversalMap");
+const fileVariableTraversalMap = require("../../traversal-maps/file-maps/fileVariableTraversalMap");
+const importTraversalMap = require("../../traversal-maps/file-maps/importTraversalMap");
 
 class FileDocument {
   constructor(filePath) {
@@ -24,6 +28,7 @@ class FileDocument {
     this.variables = [];
     this.imports = [];
     this.exports = [];
+    this.previousFileMismatchDocumentation = null;
   }
 
   initializeFileData = async () => {
@@ -31,79 +36,111 @@ class FileDocument {
       const sourceCode = await fs.promises.readFile(this.filePath, "utf-8");
       this.sourceCodeHash = getHash(sourceCode);
 
-      // Generate an AST from the source code
-      const ast = babelParser.parse(sourceCode, {
-        sourceType: "module",
-        plugins: ["jsx"],
-      });
+      const matchingFilePathDocumentationObject =
+        await this.findMatchingFileDocs();
 
-      // combine all traversal maps into one with object
-      const fileTraversalMap = Object.assign(
-        {},
-        functionTraversalMap,
-        classTraversalMap,
-        variableTraversalMap,
-        importTraversalMap
-      );
-
-      // Traverse the AST and populate the file data by calling the functions in the traversal map
-      // This object is passed as the fourth argument to the traverse function so
-      // that the functions in the traversal map can access the FileDocument object
-      babelTraverse.default(ast, fileTraversalMap, null, this);
+      if (matchingFilePathDocumentationObject) {
+        if (
+          matchingFilePathDocumentationObject.sourceCodeHash ===
+          this.sourceCodeHash
+        ) {
+          logGreen("Exact match found for " + this.filePath);
+          Object.assign(this, matchingFilePathDocumentationObject);
+        } else {
+          logBlue("Source code mismatch found for " + this.filePath);
+          this.previousFileMismatchDocumentation =
+            matchingFilePathDocumentationObject;
+          await this.initializeFileDocument(sourceCode);
+        }
+      } else {
+        logCyan("No match found for " + this.filePath);
+        await this.initializeFileDocument(sourceCode);
+      }
     } catch (error) {
       logErrorRed(
-        `Error initializing file data for ${filePath}. Error: ${error.message}`
+        `Error initializing file data for ${this.filePath}. Error: ${error.message}`
       );
     }
   };
 
-  initializeFileDocument = async (componentsData) => {
-    const matchingFileDocumentationObject = this.findMatchingFileDocs();
+  initializeFileDocument = async (sourceCode) => {
+    // Generate an AST from the source code
+    const ast = babelParser.parse(sourceCode, {
+      sourceType: "module",
+      plugins: ["jsx"],
+    });
 
-    if (matchingFileDocumentationObject) {
-      Object.assign(this, matchingFileDocumentationObject);
-    } else {
-      config.updatedFiles.push(this.filePath);
-      await this.getComponentDescriptions(componentsData);
-    }
+    // combine all traversal maps into one with object
+    const fileTraversalMap = Object.assign(
+      {},
+      fileFunctionTraversalMap(CodeBlockDocument),
+      fileClassTraversalMap(CodeBlockDocument),
+      fileVariableTraversalMap(CodeBlockDocument),
+      importTraversalMap
+    );
+
+    // Traverse the AST and populate the file data by calling the functions in the traversal map
+    // This object is passed as the fourth argument to the traverse function so
+    // that the functions in the traversal map can access the FileDocument object
+    babelTraverse.default(ast, fileTraversalMap, null, this);
+
+    config.updatedFiles.push(this.filePath);
+    await this.getComponentDescriptions(this.components);
   };
 
   findMatchingFileDocs = () => {
-    return findFileDocumentation(this.filePath, this.sourceCodeHash);
+    // Relative path to the generated documentation file used to require it if it exists
+    const relativeDocsFilePath =
+      "../../generated-documentation/generated-documentation.js";
+
+    // Absolute path to the generated documentation file used to find the matching object if it exists
+    const documentationFilePath = path.join(__dirname, relativeDocsFilePath);
+
+    let matchingObject = null;
+
+    // Check if the file exists
+    if (fs.existsSync(documentationFilePath)) {
+      // The file exists, so you can require it
+      const documentationData = require(relativeDocsFilePath);
+
+      // Now you can use the documentationData as needed
+      matchingObject = documentationData.find((doc) => {
+        return doc.filePath === this.filePath;
+      });
+    }
+
+    if (matchingObject) {
+    } else {
+      logGreen("No matching object found for " + this.filePath);
+    }
+
+    return matchingObject;
   };
 
   getComponentDescriptions = async () => {
-    // Create new variable to save the component data before we clear it to make way for the component documentation
-    const componentsData = [...this.components];
-    this.components = [];
-
     // Parse the documentation for each component in the file
-    for (const componentObject of componentsData) {
+    for (const componentDocument of this.components) {
       try {
         // Check if there is already a component documentation object for this component
-        const matchedComponentDocumentationObject =
-          findComponentDocumentationObject(componentObject, this.components);
+        let matchedComponentDocumentationObject = null;
+
+        matchedComponentDocumentationObject =
+          await componentDocument.findComponentDocumentationObject(
+            this.previousFileMismatchDocumentation
+          );
 
         // If there is a matched component documentation object, push it instead of generating a new one
         if (matchedComponentDocumentationObject) {
-          this.components.push(matchedComponentDocumentationObject);
+          Object.assign(componentDocument, matchedComponentDocumentationObject);
         } else {
-          // Generate a new component documentation object since there is none or there have been changes
-          const newComponentDoc = new CodeBlockDocument(
-            componentObject.name,
-            componentObject.code
-          );
-
           // Get the description from the OpenAI API
-          await getDescription(newComponentDoc, componentObject.code);
+          await getDescription(componentDocument, componentDocument.code);
 
-          this.components.push(newComponentDoc);
-
-          config.updatedComponents.push(componentObject.name);
+          config.updatedComponents.push(componentDocument.name);
         }
       } catch (error) {
         logErrorRed(
-          `Error parsing documentation for ${componentObject.name}. Error: ${error.message}`
+          `Error parsing documentation for ${componentDocument.name}. Error: ${error.message}`
         );
       }
     }
