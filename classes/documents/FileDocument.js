@@ -28,12 +28,13 @@ class FileDocument {
     this.variables = [];
     this.imports = [];
     this.exports = [];
-    this.previousFileMismatchDocumentation = null;
+    this.getPreviousFileMismatchDocumentation = () => null;
   }
 
   initializeFileData = async () => {
     try {
       const sourceCode = await fs.promises.readFile(this.filePath, "utf-8");
+
       this.sourceCodeHash = getHash(sourceCode);
 
       const matchingFilePathDocumentationObject =
@@ -48,7 +49,7 @@ class FileDocument {
           Object.assign(this, matchingFilePathDocumentationObject);
         } else {
           logBlue("Source code mismatch found for " + this.filePath);
-          this.previousFileMismatchDocumentation =
+          this.getPreviousFileMismatchDocumentation = () =>
             matchingFilePathDocumentationObject;
           await this.initializeFileDocument(sourceCode);
         }
@@ -64,6 +65,9 @@ class FileDocument {
   };
 
   initializeFileDocument = async (sourceCode) => {
+    console.log("Initializing file document for " + this.filePath);
+
+    sourceCode = sourceCode.replaceAll("super(", "constructorSuper(");
     // Generate an AST from the source code
     const ast = babelParser.parse(sourceCode, {
       sourceType: "module",
@@ -126,7 +130,7 @@ class FileDocument {
 
         matchedComponentDocumentationObject =
           await componentDocument.findComponentDocumentationObject(
-            this.previousFileMismatchDocumentation
+            this.getPreviousFileMismatchDocumentation()
           );
 
         // If there is a matched component documentation object, push it instead of generating a new one

@@ -3,8 +3,15 @@ const {
   logWhite,
   logCyan,
   logErrorRed,
+  logGray,
+  logMagenta,
 } = require("../../utils/console-utils/chalkUtils");
 const getCodeFromNode = require("../../utils/ast-utils/getCodeFromNode");
+const generator = require("@babel/generator").default;
+const createAstFromNodeFragment = require("../../utils/ast-utils/createAstFromNodeFragment");
+const classMethodTraversalMap = require("../codeblock-maps/classMethodTraversalMap");
+const classPropertyTraversalMap = require("../codeblock-maps/classPropertyTraversalMap");
+const t = require("@babel/types");
 
 const fileClassTraversalMap = (type) => {
   return {
@@ -18,10 +25,10 @@ const fileClassTraversalMap = (type) => {
         const blockDocument = new type(nodeName, getCodeFromNode(path.node));
 
         if (returnJsx(path.node.body)) {
-          logCyan(`JSX found for ${nodeName}`);
+          logGray(`JSX found for ${nodeName}`);
           this.components.push(blockDocument);
         } else {
-          logWhite(`No JSX found for ${nodeName}`);
+          logGray(`No JSX found for ${nodeName}`);
 
           if (
             path.parentPath.type === "Program" ||
@@ -29,7 +36,8 @@ const fileClassTraversalMap = (type) => {
               this.bindingKeys &&
               this.bindingKeys.includes(nodeName))
           ) {
-            logWhite(`Adding ${nodeName} to global classes array`);
+            const arrayParent = this ? this.name : "global";
+            logMagenta(`Adding ${nodeName} to ${arrayParent} classes array`);
             this.classes.push(blockDocument);
           }
         }

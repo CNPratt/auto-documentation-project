@@ -2,6 +2,7 @@ const getHash = require("../../utils/file-utils/getHash");
 const babelTraverse = require("@babel/traverse");
 const babelParser = require("@babel/parser");
 const innerCodeTraversalMap = require("../../traversal-maps/codeblock-maps/innerCodeExtractionTraversalMap");
+const { logGreen, logYellow } = require("../../utils/console-utils/chalkUtils");
 
 class CodeBlockDocument {
   constructor(name, sourceCode) {
@@ -9,15 +10,16 @@ class CodeBlockDocument {
     this.variables = [];
     this.functions = [];
     this.components = [];
+    this.classes = [];
     this.description = "";
     this.sourceCodeHash = getHash(sourceCode);
     // temp
     this.isBlock = true;
-
     this.initializeComponentDocument(sourceCode);
   }
 
   initializeComponentDocument = async (sourceCode) => {
+    logYellow("Initializing component document for " + this.name);
     // Generate an AST from the source code
     const ast = babelParser.parse(sourceCode, {
       sourceType: "module",
@@ -33,6 +35,8 @@ class CodeBlockDocument {
       null,
       this
     );
+
+    logGreen("Finished initializing component document for " + this.name);
   };
 
   // Function to find the object with the matching component name in the generated documentationData array

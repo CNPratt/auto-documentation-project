@@ -3,6 +3,8 @@ const {
   logWhite,
   logCyan,
   logErrorRed,
+  logGray,
+  logMagenta,
 } = require("../../utils/console-utils/chalkUtils");
 const getCodeFromNode = require("../../utils/ast-utils/getCodeFromNode");
 
@@ -18,7 +20,7 @@ const fileVariableTraversalMap = (type) => {
         const blockDocument = new type(nodeName, getCodeFromNode(path.node));
 
         if (returnJsx(path.node.declarations[0].init)) {
-          logCyan(`JSX found for ${nodeName}`);
+          logGray(`JSX found for ${nodeName}`);
           if (
             path.parentPath.type === "Program" ||
             (this.isBlock &&
@@ -28,7 +30,7 @@ const fileVariableTraversalMap = (type) => {
             this.components.push(blockDocument);
           }
         } else {
-          logWhite(`No JSX found for ${nodeName}`);
+          logGray(`No JSX found for ${nodeName}`);
 
           if (
             path.parentPath.type === "Program" ||
@@ -40,10 +42,16 @@ const fileVariableTraversalMap = (type) => {
               path.node.declarations[0].init &&
               path.node.declarations[0].init.type === "ArrowFunctionExpression"
             ) {
-              logWhite(`Adding ${nodeName} to global functions array`);
+              const arrayParent = this ? this.name : "global";
+              logMagenta(
+                `Adding ${nodeName} to ${arrayParent} functions array`
+              );
               this.functions.push(blockDocument);
             } else {
-              logWhite(`Adding ${nodeName} to global variables array`);
+              const arrayParent = this ? this.name : "global";
+              logMagenta(
+                `Adding ${nodeName} to ${arrayParent} variables array`
+              );
               this.variables.push(blockDocument);
             }
           }
