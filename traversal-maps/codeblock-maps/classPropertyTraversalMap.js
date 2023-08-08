@@ -1,17 +1,31 @@
 const t = require("@babel/types");
 const createAstFromNodeFragment = require("../../utils/ast-utils/createAstFromNodeFragment");
 const generator = require("@babel/generator").default;
-const { logMagenta, logCyan } = require("../../utils/console-utils/chalkUtils");
+const {
+  logMagenta,
+  logCyan,
+  logBgBlue,
+} = require("../../utils/console-utils/chalkUtils");
 const nodeReturnsJsx = require("../../utils/ast-utils/nodeReturnsJsx");
 
 const classPropertyTraversalMap = (type, handleInnerCode) => {
   return {
     ClassProperty(path) {
-      // parent name
-      // console.log("parent name", path.parentPath.node.key.name);
       console.log("path.parentPath.type", path.parentPath.type);
       console.log("this.isBlock", this.isBlock);
       console.log("this.bindingKeys", this.bindingKeys);
+
+      // Get the scope of the current function
+      const { scope } = path;
+
+      // Get the bindings within the scope, which include variables, function declarations, etc.
+      const bindings = scope.bindings;
+
+      const bindingKeys = Object.keys(bindings);
+
+      console.log(bindingKeys);
+
+      // this.bindingKeys = bindingKeys;
 
       // Create a new variable declaration
       const variableDeclaration = t.variableDeclaration("const", [
@@ -28,7 +42,9 @@ const classPropertyTraversalMap = (type, handleInnerCode) => {
         generator(ast).code
       );
 
-      logCyan(`Found class property:`, path.node.key.name);
+      logCyan(
+        `Found class property: ${path.node.key.name} with context: ${this.name}`
+      );
 
       if (this.name === this.bindingKeys[0]) {
         if (nodeReturnsJsx(path.node.body)) {
@@ -47,9 +63,23 @@ const classPropertyTraversalMap = (type, handleInnerCode) => {
           );
           this.variables.push(classPropertyDoc);
         }
+
+        logMagenta(
+          `Reason: BindingKey[0] is equal to context name: ${this.name}`
+        );
       }
 
-      // handleInnerCode(path, this);
+      logMagenta(`Declined ${path.node.key.name}`);
+
+      if (!this.bindingKeys) {
+        logMagenta(`Declined: bindingKeys is undefined`);
+      }
+
+      if (this.bindingKeys && this.bindingKeys[0] !== this.name) {
+        logMagenta(
+          `Declined: first bindingKey is not equal to context: ${this.name}`
+        );
+      }
     },
   };
 };

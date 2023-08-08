@@ -14,6 +14,11 @@ const fileVariableTraversalMap = (type) => {
       const identifier = "variable";
       const nodeName = path.node.declarations[0].id.name;
 
+      console.log("path.parentPath.type", path.parentPath.type);
+      console.log("this.isBlock", this.isBlock);
+      console.log("this.bindingKeys", this.bindingKeys);
+
+      console.log(getCodeFromNode(path.node));
       logWhite(`Identified ${identifier} declaration:`, nodeName);
 
       try {
@@ -54,7 +59,43 @@ const fileVariableTraversalMap = (type) => {
               );
               this.variables.push(blockDocument);
             }
+
+            if (path.parentPath.type === "Program") {
+              logMagenta(`Reason: Parent type Program`);
+            }
+
+            if (
+              this.isBlock &&
+              this.bindingKeys &&
+              this.bindingKeys.includes(nodeName)
+            ) {
+              logMagenta(
+                `Reason: BindingKeys includes context name: ${this.name}`
+              );
+            }
           }
+        }
+
+        logMagenta(`Declined ${nodeName}`);
+
+        if (path.parentPath.type !== "Program") {
+          logMagenta(
+            `Declined: Parent type ${path.parentPath.type} is not Program`
+          );
+        }
+        if (!this.isBlock) {
+          logMagenta(`Declined: isBlock is false`);
+        }
+        if (!this.bindingKeys) {
+          logMagenta(`Declined: bindingKeys is undefined`);
+        }
+
+        if (
+          this.isBlock &&
+          this.bindingKeys &&
+          this.bindingKeys.includes(nodeName)
+        ) {
+          logMagenta(`Declined: bindingKeys does not include ${nodeName}`);
         }
       } catch (error) {
         logErrorRed(

@@ -6,8 +6,13 @@ const logErrorRed = chalkUtils.logErrorRed;
 const config = require("../../config");
 
 const getDescription = async (documentation, sourceCode) => {
+  const replacedSuperSource = sourceCode.replace(
+    "constructorSuperPlaceholder(",
+    "super("
+  );
+
   // Get the component code for description generation
-  const componentCode = `${config.prefaceStatement}: ${documentation.name}\n${sourceCode}`;
+  const componentCode = `${config.prefaceStatement}: ${documentation.name}\n${replacedSuperSource}`;
 
   console.log("Getting description for component:", documentation.name);
 

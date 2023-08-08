@@ -10,12 +10,12 @@ const fs = require("fs");
 const getHash = require("../../utils/file-utils/getHash");
 const babelTraverse = require("@babel/traverse");
 const babelParser = require("@babel/parser");
-const getDescription = require("../../utils/api-utils/getDescription");
 const path = require("path");
 const fileFunctionTraversalMap = require("../../traversal-maps/file-maps/fileFunctionTraversalMap");
 const fileClassTraversalMap = require("../../traversal-maps/file-maps/fileClassTraversalMap");
 const fileVariableTraversalMap = require("../../traversal-maps/file-maps/fileVariableTraversalMap");
 const importTraversalMap = require("../../traversal-maps/file-maps/importTraversalMap");
+const getDescription = require("../../utils/api-utils/getDescription");
 
 class FileDocument {
   constructor(filePath) {
@@ -28,13 +28,17 @@ class FileDocument {
     this.variables = [];
     this.imports = [];
     this.exports = [];
-    this.getPreviousFileMismatchDocumentation = () => null;
+    this.previousFileMismatchDocumentation = null;
+    // temp
+    this.getSourceCode = null;
+    this.hasExactMatch = () => false;
   }
 
   initializeFileData = async () => {
     try {
       const sourceCode = await fs.promises.readFile(this.filePath, "utf-8");
 
+      this.getSourceCode = () => sourceCode;
       this.sourceCodeHash = getHash(sourceCode);
 
       const matchingFilePathDocumentationObject =
@@ -47,6 +51,7 @@ class FileDocument {
         ) {
           logGreen("Exact match found for " + this.filePath);
           Object.assign(this, matchingFilePathDocumentationObject);
+          this.hasExactMatch = () => true;
         } else {
           logBlue("Source code mismatch found for " + this.filePath);
           this.getPreviousFileMismatchDocumentation = () =>
@@ -67,7 +72,10 @@ class FileDocument {
   initializeFileDocument = async (sourceCode) => {
     console.log("Initializing file document for " + this.filePath);
 
-    sourceCode = sourceCode.replaceAll("super(", "constructorSuper(");
+    sourceCode = sourceCode.replaceAll(
+      "super(",
+      "constructorSuperPlaceholder("
+    );
     // Generate an AST from the source code
     const ast = babelParser.parse(sourceCode, {
       sourceType: "module",
@@ -89,7 +97,7 @@ class FileDocument {
     babelTraverse.default(ast, fileTraversalMap, null, this);
 
     config.updatedFiles.push(this.filePath);
-    await this.getComponentDescriptions(this.components);
+    await this.getFileDescription();
   };
 
   findMatchingFileDocs = () => {
@@ -121,30 +129,41 @@ class FileDocument {
     return matchingObject;
   };
 
-  getComponentDescriptions = async () => {
-    // Parse the documentation for each component in the file
-    for (const componentDocument of this.components) {
-      try {
-        // Check if there is already a component documentation object for this component
-        let matchedComponentDocumentationObject = null;
+  getFileDescription = async () => {
+    try {
+      const code = this.getSourceCode();
 
-        matchedComponentDocumentationObject =
-          await componentDocument.findComponentDocumentationObject(
-            this.getPreviousFileMismatchDocumentation()
-          );
+      // If there is a matched component documentation object, push it instead of generating a new one
+      if (!this.hasExactMatch()) {
+        // Get the description from the OpenAI API
+        await getDescription(this, code);
 
-        // If there is a matched component documentation object, push it instead of generating a new one
-        if (matchedComponentDocumentationObject) {
-          Object.assign(componentDocument, matchedComponentDocumentationObject);
-        } else {
-          // Get the description from the OpenAI API
-          await getDescription(componentDocument, componentDocument.code);
+        config.updatedComponents.push(this.name);
 
-          config.updatedComponents.push(componentDocument.name);
+        if (!this.description) {
+          await this.getChildrenDescriptions();
         }
-      } catch (error) {
-        logErrorRed(
-          `Error parsing documentation for ${componentDocument.name}. Error: ${error.message}`
+      }
+    } catch (error) {
+      logErrorRed(
+        `Error parsing documentation for ${this.name}. Error: ${error.message}`
+      );
+    }
+  };
+
+  getChildrenDescriptions = async () => {
+    const codeBlockArraysArray = [
+      this.components,
+      this.classes,
+      this.functions,
+      this.variables,
+    ];
+
+    // Parse the documentation for each code block in the file
+    for (const codeBlocksArray of codeBlockArraysArray) {
+      for (const codeBlockDocument of codeBlocksArray) {
+        await codeBlockDocument.getCodeBlockDescriptions(
+          this.previousFileMismatchDocumentation
         );
       }
     }

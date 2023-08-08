@@ -13,7 +13,7 @@ const generateMasterDocumentation = async (files) => {
   const masterDocument = [];
 
   for (const file of files) {
-    if (file.endsWith(".js")) {
+    if (file.endsWith(".js") && file.includes("App.js")) {
       logYellow("Getting data for file:", file);
 
       try {

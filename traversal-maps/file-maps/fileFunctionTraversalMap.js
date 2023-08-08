@@ -17,6 +17,7 @@ const fileFunctionTraversalMap = (type) => {
       const identifier = "function";
       const nodeName = path.node.id.name;
 
+      console.log(getCodeFromNode(path.node));
       logWhite(`Identified ${identifier} declaration:`, nodeName);
 
       try {
@@ -36,8 +37,45 @@ const fileFunctionTraversalMap = (type) => {
           ) {
             const arrayParent = this ? this.name : "global";
             logMagenta(`Adding ${nodeName} to ${arrayParent} functions array`);
+
+            if (path.parentPath.type === "Program") {
+              logMagenta(`Reason: Parent type Program`);
+            }
+
+            if (
+              this.isBlock &&
+              this.bindingKeys &&
+              this.bindingKeys.includes(nodeName)
+            ) {
+              logMagenta(
+                `Reason: BindingKeys includes context name: ${this.name}`
+              );
+            }
+
             this.functions.push(blockDocument);
           }
+        }
+
+        logMagenta(`Declined ${nodeName}`);
+
+        if (path.parentPath.type !== "Program") {
+          logMagenta(
+            `Declined: Parent type ${path.parentPath.type} is not Program`
+          );
+        }
+        if (!this.isBlock) {
+          logMagenta(`Declined: isBlock is false`);
+        }
+        if (!this.bindingKeys) {
+          logMagenta(`Declined: bindingKeys is undefined`);
+        }
+
+        if (
+          this.isBlock &&
+          this.bindingKeys &&
+          this.bindingKeys.includes(nodeName)
+        ) {
+          logMagenta(`Declined: bindingKeys does not include ${nodeName}`);
         }
       } catch (error) {
         logErrorRed(

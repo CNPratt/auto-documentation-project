@@ -23,7 +23,13 @@ const innerCodeTraversalMap = (type, codeName) => {
 
     try {
       if (path.parentPath.type === "Program") {
-        // logCyan(`Found inner code for ${codeName}`);
+        logCyan(
+          `Found inner code for ${codeName} with context: ${context.name}`
+        );
+
+        if (codeName === "ast") {
+          // console.log(path);
+        }
 
         // Get the scope of the current function
         const { scope } = path;
@@ -33,7 +39,7 @@ const innerCodeTraversalMap = (type, codeName) => {
 
         const bindingKeys = Object.keys(bindings);
 
-        // console.log("bindingKeys", bindingKeys);
+        console.log(bindingKeys);
 
         path.traverse(combinedTraversalMap, { ...context, bindingKeys });
       } else {
@@ -49,24 +55,24 @@ const innerCodeTraversalMap = (type, codeName) => {
     fileFunctionTraversalMap(type),
     fileClassTraversalMap(type),
     fileVariableTraversalMap(type),
-    classMethodTraversalMap(type, handleInnerCode),
-    classPropertyTraversalMap(type, handleInnerCode)
+    classMethodTraversalMap(type),
+    classPropertyTraversalMap(type)
   );
 
   return {
     FunctionDeclaration(path) {
       const name = path.node.id.name;
-      logCyan(`Found function declaration:`, name);
+      logCyan(`Found function declaration: ${name} with context: ${this.name}`);
       handleInnerCode(path, this);
     },
     VariableDeclaration(path) {
       const name = path.node.declarations[0].id.name;
-      logCyan(`Found variable declaration:`, name);
+      logCyan(`Found variable declaration: ${name} with context: ${this.name}`);
       handleInnerCode(path, this);
     },
     ClassDeclaration(path) {
       const name = path.node.id.name;
-      logCyan(`Found class declaration:`, name);
+      logCyan(`Found class declaration: ${name} with context: ${this.name}`);
       handleInnerCode(path, this);
     },
   };
