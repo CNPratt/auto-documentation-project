@@ -2,15 +2,146 @@ const fs = require("fs");
 const parser = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 const path = require("path");
-const generate = require("@babel/generator").default;
 
-function analyzeFile(ast) {
+function createObject(name, sourceCode) {
+  return {
+    name,
+    components: [],
+    classes: [],
+    functions: [],
+    variables: [],
+    sourceCode,
+  };
+}
+
+const getNodeToExtract = (path) => {
+  // Find the appropriate node to extract the source code from
+  let nodeToExtract = path.node;
+
+  if (path.isArrowFunctionExpression() || path.isFunctionExpression()) {
+    // If inside an assignment expression, use the ancestor node
+    const assignmentExpression = path.findParent((p) =>
+      p.isAssignmentExpression()
+    );
+    if (assignmentExpression) {
+      nodeToExtract = assignmentExpression.node;
+    }
+  }
+
+  return nodeToExtract;
+};
+
+const getSourceCode = (path, code) => {
+  let nodeToExtract = getNodeToExtract(path);
+
+  // Extract the source code for the node
+  const sourceCode = code.substring(nodeToExtract.start, nodeToExtract.end);
+
+  return sourceCode;
+};
+
+const handleFunctionDeclaration = (path, currentScope, stack, code) => {
+  const functionName = path.node.id ? path.node.id.name : null;
+  const functionObject = createObject(functionName, getSourceCode(path, code));
+
+  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+  currentScope.functions.push(functionObject);
+  stack.push(functionObject);
+};
+
+const handleArrowOrFunctionExpression = (path, currentScope, stack, code) => {
+  if (path.parentPath.isClassProperty()) {
+    return;
+  }
+
+  let functionName = null;
+  if (path.parent.type === "VariableDeclarator") {
+    functionName = path.parent.id.name; // Function assigned to variable
+  } else if (path.parent.type === "AssignmentExpression") {
+    functionName = path.parent.left.property.name; // Function assigned to property
+  }
+  const functionObject = createObject(functionName, getSourceCode(path, code));
+
+  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+  const hasExactMatch = currentScope.functions[functionName];
+
+  // const functionObject = createObject(arrowFuncName, getSourceCode(path, code));
+
+  const newFunctionObject = {
+    ...functionObject,
+    sourceCode: hasExactMatch
+      ? hasExactMatch.sourceCode
+      : functionObject.sourceCode,
+  };
+
+  console.log(hasExactMatch && hasExactMatch.sourceCode);
+  console.log(functionObject.sourceCode);
+
+  currentScope.functions[functionName] = newFunctionObject;
+  stack.push(functionObject);
+};
+
+const handleClassProperty = (path, currentScope, stack, code) => {
+  // Handle class properties assigned to functions
+  const functionName = path.node.key.name;
+  const functionObject = createObject(functionName, getSourceCode(path, code));
+
+  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+  currentScope.functions.push(functionObject);
+  stack.push(functionObject);
+};
+
+const handleClassDeclaration = (path, currentScope, stack, code) => {
+  const className = path.node.id.name;
+  const classObject = createObject(className, getSourceCode(path, code));
+
+  console.log(`Pushing ${classObject.name} to ${currentScope.name}`);
+
+  currentScope.classes.push(classObject);
+  stack.push(classObject);
+};
+
+const handleVariableArrowFunction = (path, currentScope, stack) => {
+  console.log("VARIABLE DEC ARROW FUNCTION OMITTED");
+
+  const arrowFuncName = path.node.declarations[0].id.name;
+  const functionObject = createObject(arrowFuncName, getSourceCode(path, code));
+
+  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+  currentScope.functions.push(functionObject);
+  // stack.push(functionObject);
+};
+
+const handleVariableDeclaration = (path, currentScope, stack, code) => {
+  const variableName = path.node.declarations[0].id.name;
+  const variableObject = createObject(variableName, getSourceCode(path, code));
+
+  console.log(`Pushing ${variableObject.name} to ${currentScope.name}`);
+
+  currentScope.variables.push(variableObject);
+};
+
+const handleClassMethod = (path, currentScope, stack, code) => {
+  const methodName = path.node.key.name;
+  const methodObject = createObject(methodName, getSourceCode(path, code));
+
+  console.log(`Pushing ${methodObject.name} to ${currentScope.name}`);
+
+  currentScope.functions.push(methodObject);
+  stack.push(methodObject);
+};
+
+function analyzeFile(ast, code) {
   const result = {
-    name: "file.js",
+    name: filePath.split(path.sep).pop(),
     filepath: filePath,
-    functionsArray: [],
-    classesArray: [],
-    variablesArray: [],
+    components: [],
+    classes: [],
+    functions: [],
+    variables: [],
   };
 
   const stack = [result];
@@ -19,102 +150,45 @@ function analyzeFile(ast) {
     enter(path) {
       const currentScope = stack[stack.length - 1];
 
-      // Extract the source code for the current node from the original code
-      const sourceCode = code.substring(path.node.start, path.node.end);
+      const nodeName =
+        path.node?.name ||
+        path.node?.key?.name ||
+        path.node?.id?.name ||
+        path.node?.left?.property?.name ||
+        (path.node?.declarations && path.node?.declarations[0]?.id?.name) ||
+        null;
 
-      console.log(currentScope);
+      console.log(stack.length, nodeName);
+
+      console.log(currentScope.name, path.node.type);
 
       if (path.isFunctionDeclaration()) {
-        const functionObject = {
-          name: path.node.id ? path.node.id.name : null, // Named function
-          functionsArray: [],
-          classesArray: [],
-          variablesArray: [],
-          sourceCode,
-        };
-        currentScope.functionsArray.push(functionObject);
-        stack.push(functionObject);
+        handleFunctionDeclaration(path, currentScope, stack, code);
       } else if (
         path.isArrowFunctionExpression() ||
         path.isFunctionExpression()
       ) {
-        if (path.parentPath.isClassProperty()) return;
-
-        let functionName = null;
-        if (path.parent.type === "VariableDeclarator") {
-          functionName = path.parent.id.name; // Function assigned to variable
-        } else if (path.parent.type === "AssignmentExpression") {
-          functionName = path.parent.left.property.name; // Function assigned to property
-        }
-        const functionObject = {
-          name: functionName,
-          functionsArray: [],
-          classesArray: [],
-          variablesArray: [],
-          sourceCode,
-        };
-        currentScope.functionsArray.push(functionObject);
-        stack.push(functionObject);
+        handleArrowOrFunctionExpression(path, currentScope, stack, code);
       } else if (
         path.isClassProperty() &&
         (path.node.value.type === "ArrowFunctionExpression" ||
           path.node.value.type === "FunctionExpression")
       ) {
-        // Handle class properties assigned to functions
-        const functionObject = {
-          name: path.node.key.name, // Name from the property key
-          functionsArray: [],
-          classesArray: [],
-          variablesArray: [],
-          sourceCode,
-        };
-        currentScope.functionsArray.push(functionObject);
-        stack.push(functionObject);
+        handleClassProperty(path, currentScope, stack, code);
       } else if (path.isClassDeclaration()) {
-        const classObject = {
-          name: path.node.id.name,
-          functionsArray: [],
-          variablesArray: [],
-          classesArray: [],
-          sourceCode,
-        };
-        currentScope.classesArray.push(classObject);
-        stack.push(classObject);
-      } else if (path.isVariableDeclaration() && currentScope.variablesArray) {
+        handleClassDeclaration(path, currentScope, stack, code);
+      } else if (path.isVariableDeclaration()) {
         // Handle arrow functions assigned to variables
         if (
           path.node.declarations[0].init &&
           path.node.declarations[0].init.type === "ArrowFunctionExpression"
         ) {
-          const functionObject = {
-            name: path.node.declarations[0].id.name,
-            functionsArray: [],
-            classesArray: [],
-            variablesArray: [],
-            sourceCode,
-          };
-          currentScope.functionsArray.push(functionObject);
-          stack.push(functionObject);
+          handleVariableArrowFunction(path, currentScope, stack, code);
         } else {
-          const variableObject = {
-            name: path.node.declarations[0].id.name,
-            functionsArray: [],
-            classesArray: [],
-            variablesArray: [],
-            sourceCode,
-          };
-          currentScope.variablesArray.push(variableObject);
+          handleVariableDeclaration(path, currentScope, stack, code);
         }
       } else if (path.isClassMethod()) {
-        const methodObject = {
-          name: path.node.key.name,
-          functionsArray: [],
-          classesArray: [],
-          variablesArray: [],
-          sourceCode,
-        };
-        currentScope.functionsArray.push(methodObject);
-        stack.push(methodObject);
+        handleClassMethod(path, currentScope, stack, code);
       }
     },
     exit(path) {
@@ -125,6 +199,7 @@ function analyzeFile(ast) {
         path.isClassDeclaration() ||
         path.isClassMethod()
       ) {
+        console.log(`Popping ${stack[stack.length - 1].name}`);
         stack.pop();
       }
     },
@@ -133,7 +208,10 @@ function analyzeFile(ast) {
   return result;
 }
 
-const filePath = "../../classes/documents/FileDocument.js"; // Update this path
+// const filePath = "../../../../iforager_react_native/App.js";
+const filePath = "../../../../sample-react-project/src/App.js"; // Update this path
+// const filePath = "../../classes/documents/FileDocument.js"; // Update this path
+
 const projectFilePath = path.join(__dirname, filePath);
 
 const code = fs.readFileSync(projectFilePath, "utf-8");
@@ -142,7 +220,7 @@ const ast = parser.parse(code, {
   plugins: ["jsx"], // Include if you are using JSX
 });
 
-const result = analyzeFile(ast);
+const result = analyzeFile(ast, code);
 
 // write to ../..//generated-documentation/generated-documentation.js
 const resultString = JSON.stringify(result);
@@ -159,4 +237,4 @@ fs.writeFileSync(
   buffer
 );
 
-console.log(JSON.stringify(result, null, 2));
+// console.log(JSON.stringify(result, null, 2));
