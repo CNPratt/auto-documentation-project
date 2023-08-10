@@ -1,11 +1,12 @@
 const fs = require("fs");
 const parser = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
-const path = require("path");
+const pathUtil = require("path");
 const {
   logErrorRed,
   logBgBlue,
 } = require("../../utils/console-utils/chalkUtils");
+const getHash = require("../../utils/file-utils/getHash");
 
 function createObject(name, sourceCode) {
   return {
@@ -14,7 +15,10 @@ function createObject(name, sourceCode) {
     classes: [],
     functions: [],
     variables: [],
-    sourceCode,
+    stringSourceCode: sourceCode,
+    sourceCode: () => sourceCode,
+    sourceCodeHash: getHash(sourceCode),
+    arrayPath: [],
   };
 }
 
@@ -27,12 +31,19 @@ const getNodeName = (node) => {
     (node?.declarations && node?.declarations[0]?.id?.name) ||
     null;
 
+  if (!nodeName) {
+    logBgBlue(`No node name found for node`);
+  }
+
   // logBgBlue(`Node name: ${nodeName}`);
 
   return nodeName;
 };
 
 const checkPathsToIgnore = (path) => {
+  // Ignore paths that are not relevant to the traversal
+  // For example, we don't want to catch anonymous callback functions inside a call expression
+
   const pathsToIgnore = [
     path.isForStatement(),
     path.isIfStatement(),
@@ -125,7 +136,13 @@ const getSourceCode = (path, code) => {
   }
 };
 
-const handleComponentsDeclaration = (path, currentScope, stack, code) => {
+const handleComponentsDeclaration = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   const nodeName = getNodeName(path.node);
 
   try {
@@ -133,10 +150,23 @@ const handleComponentsDeclaration = (path, currentScope, stack, code) => {
       (path.isArrowFunctionExpression() || path.isFunctionExpression()) &&
       path.node.body.type === "JSXElement"
     ) {
+      const componentName = path.parent.id.name;
+
       // This is a React functional component
-      const componentObject = createObject(nodeName, getSourceCode(path, code));
+      const componentObject = createObject(
+        componentName,
+        getSourceCode(path, code)
+      );
+
+      componentObject.arrayPath = [
+        ...currentPathArray,
+        { key: "components", scope: currentScope.name },
+      ];
+
       currentScope.components.push(componentObject);
       stack.push(componentObject);
+
+      currentPathArray.push({ key: "components", scope: currentScope.name });
 
       return true;
     }
@@ -150,8 +180,15 @@ const handleComponentsDeclaration = (path, currentScope, stack, code) => {
     ) {
       // This is a React class component
       const classObject = createObject(nodeName, getSourceCode(path, code));
+
+      classObject.arrayPath = [
+        ...currentPathArray,
+        { key: "components", scope: currentScope.name },
+      ];
+
       currentScope.components.push(classObject);
       stack.push(classObject);
+      currentPathArray.push({ key: "components", scope: currentScope.name });
 
       return true;
     }
@@ -166,15 +203,28 @@ const handleComponentsDeclaration = (path, currentScope, stack, code) => {
   return false;
 };
 
-const handleFunctionDeclaration = (path, currentScope, stack, code) => {
+const handleFunctionDeclaration = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     const nodeName = getNodeName(path.node);
 
     const functionObject = createObject(nodeName, getSourceCode(path, code));
 
+    functionObject.arrayPath = [
+      ...currentPathArray,
+      { key: "functions", scope: currentScope.name },
+    ];
+
     console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
     currentScope.functions.push(functionObject);
     stack.push(functionObject);
+    currentPathArray.push({ key: "functions", scope: currentScope.name });
   } catch (error) {
     logErrorRed(
       `Error handling function declaration for ${getNodeName(
@@ -184,25 +234,46 @@ const handleFunctionDeclaration = (path, currentScope, stack, code) => {
   }
 };
 
-const handleArrowOrFunctionExpression = (path, currentScope, stack, code) => {
+const handleArrowOrFunctionExpression = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     if (path.parentPath.isClassProperty()) {
       return;
     }
 
-    const nodeName = getNodeName(path.node);
+    let functionName = null;
+    if (path.parent.type === "VariableDeclarator") {
+      functionName = path.parent.id.name; // Function assigned to variable
+    } else if (path.parent.type === "AssignmentExpression") {
+      functionName = path.parent.left.property.name; // Function assigned to property
+    }
 
-    const functionObject = createObject(nodeName, getSourceCode(path, code));
+    const functionObject = createObject(
+      functionName,
+      getSourceCode(path, code)
+    );
 
     console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
 
     const newFunctionObject = replaceArrowFunctionVariableDeclaration(
       currentScope,
-      nodeName,
+      functionName,
       functionObject
     );
 
+    newFunctionObject.arrayPath = [
+      ...currentPathArray,
+      { key: "functions", scope: currentScope.name },
+    ];
+
     stack.push(newFunctionObject);
+
+    currentPathArray.push({ key: "functions", scope: currentScope.name });
   } catch (error) {
     logErrorRed(
       `Error handling arrow or function expression for ${getNodeName(
@@ -212,17 +283,29 @@ const handleArrowOrFunctionExpression = (path, currentScope, stack, code) => {
   }
 };
 
-const handleClassProperty = (path, currentScope, stack, code) => {
+const handleClassProperty = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     // Handle class properties assigned to functions
     const nodeName = getNodeName(path.node);
 
     const functionObject = createObject(nodeName, getSourceCode(path, code));
 
+    functionObject.arrayPath = [
+      ...currentPathArray,
+      { key: "functions", scope: currentScope.name },
+    ];
+
     console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
 
     currentScope.functions.push(functionObject);
     stack.push(functionObject);
+    currentPathArray.push({ key: "functions", scope: currentScope.name });
   } catch (error) {
     logErrorRed(
       `Error handling class property for ${getNodeName(path.node)}: ${error}`
@@ -230,7 +313,13 @@ const handleClassProperty = (path, currentScope, stack, code) => {
   }
 };
 
-const handleClassDeclaration = (path, currentScope, stack, code) => {
+const handleClassDeclaration = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     const nodeName = getNodeName(path.node);
 
@@ -238,8 +327,14 @@ const handleClassDeclaration = (path, currentScope, stack, code) => {
 
     console.log(`Pushing ${classObject.name} to ${currentScope.name}`);
 
+    classObject.arrayPath = [
+      ...currentPathArray,
+      { key: "classes", scope: currentScope.name },
+    ];
+
     currentScope.classes.push(classObject);
     stack.push(classObject);
+    currentPathArray.push({ key: "classes", scope: currentScope.name });
   } catch (error) {
     logErrorRed(
       `Error handling class declaration for ${getNodeName(path.node)}: ${error}`
@@ -247,13 +342,24 @@ const handleClassDeclaration = (path, currentScope, stack, code) => {
   }
 };
 
-const handleVariableArrowFunction = (path, currentScope, stack, code) => {
+const handleVariableArrowFunction = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
-    console.log("VARIABLE DEC ARROW FUNCTION OMITTED");
-
     const nodeName = getNodeName(path.node);
 
+    console.log(`VARIABLE DEC ARROW FUNCTION OMITTED: ${nodeName}`);
+
     const functionObject = createObject(nodeName, getSourceCode(path, code));
+
+    functionObject.arrayPath = [
+      ...currentPathArray,
+      { key: "functions", scope: currentScope.name },
+    ];
 
     console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
 
@@ -273,11 +379,22 @@ const handleVariableArrowFunction = (path, currentScope, stack, code) => {
   }
 };
 
-const handleVariableDeclaration = (path, currentScope, stack, code) => {
+const handleVariableDeclaration = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     const nodeName = getNodeName(path.node);
 
     const variableObject = createObject(nodeName, getSourceCode(path, code));
+
+    variableObject.arrayPath = [
+      ...currentPathArray,
+      { key: "variables", scope: currentScope.name },
+    ];
 
     console.log(`Pushing ${variableObject.name} to ${currentScope.name}`);
 
@@ -291,16 +408,28 @@ const handleVariableDeclaration = (path, currentScope, stack, code) => {
   }
 };
 
-const handleClassMethod = (path, currentScope, stack, code) => {
+const handleClassMethod = (
+  path,
+  currentScope,
+  stack,
+  code,
+  currentPathArray
+) => {
   try {
     const nodeName = getNodeName(path.node);
 
     const methodObject = createObject(nodeName, getSourceCode(path, code));
 
+    methodObject.arrayPath = [
+      ...currentPathArray,
+      { key: "functions", scope: currentScope.name },
+    ];
+
     console.log(`Pushing ${methodObject.name} to ${currentScope.name}`);
 
     currentScope.functions.push(methodObject);
     stack.push(methodObject);
+    currentPathArray.push({ key: "functions", scope: currentScope.name });
   } catch (error) {
     logErrorRed(
       `Error handling class method for ${getNodeName(path.node)}: ${error}`
@@ -310,7 +439,7 @@ const handleClassMethod = (path, currentScope, stack, code) => {
 
 function analyzeFile(ast, code, filePath) {
   const result = {
-    name: filePath.split(path.sep).pop(),
+    name: filePath.split(pathUtil.sep).pop(),
     filepath: filePath,
     components: [],
     classes: [],
@@ -319,6 +448,7 @@ function analyzeFile(ast, code, filePath) {
   };
 
   const stack = [result];
+  const currentPathArray = [];
 
   traverse(ast, {
     enter(path) {
@@ -338,7 +468,8 @@ function analyzeFile(ast, code, filePath) {
         path,
         currentScope,
         stack,
-        code
+        code,
+        currentPathArray
       );
 
       if (isComponent) {
@@ -346,32 +477,62 @@ function analyzeFile(ast, code, filePath) {
       }
 
       if (path.isFunctionDeclaration()) {
-        handleFunctionDeclaration(path, currentScope, stack, code);
+        handleFunctionDeclaration(
+          path,
+          currentScope,
+          stack,
+          code,
+          currentPathArray
+        );
       } else if (
         path.isArrowFunctionExpression() ||
         path.isFunctionExpression()
       ) {
-        handleArrowOrFunctionExpression(path, currentScope, stack, code);
+        handleArrowOrFunctionExpression(
+          path,
+          currentScope,
+          stack,
+          code,
+          currentPathArray
+        );
       } else if (
         path.isClassProperty() &&
         (path.node.value.type === "ArrowFunctionExpression" ||
           path.node.value.type === "FunctionExpression")
       ) {
-        handleClassProperty(path, currentScope, stack, code);
+        handleClassProperty(path, currentScope, stack, code, currentPathArray);
       } else if (path.isClassDeclaration()) {
-        handleClassDeclaration(path, currentScope, stack, code);
+        handleClassDeclaration(
+          path,
+          currentScope,
+          stack,
+          code,
+          currentPathArray
+        );
       } else if (path.isVariableDeclaration()) {
         // Handle arrow functions assigned to variables
         if (
           path.node.declarations[0].init &&
           path.node.declarations[0].init.type === "ArrowFunctionExpression"
         ) {
-          handleVariableArrowFunction(path, currentScope, stack, code);
+          handleVariableArrowFunction(
+            path,
+            currentScope,
+            stack,
+            code,
+            currentPathArray
+          );
         } else {
-          handleVariableDeclaration(path, currentScope, stack, code);
+          handleVariableDeclaration(
+            path,
+            currentScope,
+            stack,
+            code,
+            currentPathArray
+          );
         }
       } else if (path.isClassMethod()) {
-        handleClassMethod(path, currentScope, stack, code);
+        handleClassMethod(path, currentScope, stack, code, currentPathArray);
       }
     },
     exit(path) {
@@ -384,6 +545,7 @@ function analyzeFile(ast, code, filePath) {
       ) {
         console.log(`Popping ${stack[stack.length - 1].name}`);
         stack.pop();
+        currentPathArray.pop();
       }
     },
   });
