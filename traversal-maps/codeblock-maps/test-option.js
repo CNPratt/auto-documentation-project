@@ -27,9 +27,29 @@ const getNodeName = (node) => {
     (node?.declarations && node?.declarations[0]?.id?.name) ||
     null;
 
-  logBgBlue(`Node name: ${nodeName}`);
+  // logBgBlue(`Node name: ${nodeName}`);
 
   return nodeName;
+};
+
+const checkPathsToIgnore = (path) => {
+  const pathsToIgnore = [
+    path.isForStatement(),
+    path.isIfStatement(),
+    path.isWhileStatement(),
+    path.isDoWhileStatement(),
+    path.isCallExpression(),
+  ];
+
+  if (
+    pathsToIgnore.some((pathToIgnore) => {
+      return pathToIgnore;
+    })
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 function replaceArrowFunctionVariableDeclaration(
@@ -84,141 +104,208 @@ const getNodeToExtract = (path) => {
 
     return nodeToExtract;
   } catch (error) {
-    logErrorRed(`Error getting node to extract: ${error}`);
+    logErrorRed(
+      `Error getting node to extract for ${getNodeName(path.node)}: ${error}`
+    );
   }
 };
 
 const getSourceCode = (path, code) => {
   let nodeToExtract = getNodeToExtract(path);
 
-  // Extract the source code for the node
-  const sourceCode = code.substring(nodeToExtract.start, nodeToExtract.end);
+  try {
+    // Extract the source code for the node
+    const sourceCode = code.substring(nodeToExtract.start, nodeToExtract.end);
 
-  return sourceCode;
+    return sourceCode;
+  } catch (error) {
+    logErrorRed(
+      `Error getting source code for ${getNodeName(path.node)}: ${error}`
+    );
+  }
 };
 
 const handleComponentsDeclaration = (path, currentScope, stack, code) => {
   const nodeName = getNodeName(path.node);
 
-  if (
-    (path.isArrowFunctionExpression() || path.isFunctionExpression()) &&
-    path.node.body.type === "JSXElement"
-  ) {
-    // This is a React functional component
-    const componentName = path.parent.id.name;
-    const componentObject = createObject(
-      componentName,
-      getSourceCode(path, code)
+  try {
+    if (
+      (path.isArrowFunctionExpression() || path.isFunctionExpression()) &&
+      path.node.body.type === "JSXElement"
+    ) {
+      // This is a React functional component
+      const componentObject = createObject(nodeName, getSourceCode(path, code));
+      currentScope.components.push(componentObject);
+      stack.push(componentObject);
+
+      return true;
+    }
+
+    const superClass = path.node.superClass;
+
+    if (
+      path.isClassDeclaration() &&
+      path.node.superClass &&
+      (superClass.name === "Component" || superClass.name === "React.Component")
+    ) {
+      // This is a React class component
+      const classObject = createObject(nodeName, getSourceCode(path, code));
+      currentScope.components.push(classObject);
+      stack.push(classObject);
+
+      return true;
+    }
+  } catch (error) {
+    logErrorRed(
+      `Error handling components declaration for ${getNodeName(
+        path.node
+      )}: ${error}`
     );
-    currentScope.components.push(componentObject);
-    stack.push(componentObject);
-
-    return true;
-  }
-
-  const superClass = path.node.superClass;
-
-  if (
-    path.isClassDeclaration() &&
-    path.node.superClass &&
-    (superClass.name === "Component" || superClass.name === "React.Component")
-  ) {
-    // This is a React class component
-    const className = path.node.id.name;
-    const classObject = createObject(className, getSourceCode(path, code));
-    currentScope.components.push(classObject);
-    stack.push(classObject);
-
-    return true;
   }
 
   return false;
 };
 
 const handleFunctionDeclaration = (path, currentScope, stack, code) => {
-  const functionName = path.node.id ? path.node.id.name : null;
-  const functionObject = createObject(functionName, getSourceCode(path, code));
+  try {
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
-  currentScope.functions.push(functionObject);
-  stack.push(functionObject);
+    const functionObject = createObject(nodeName, getSourceCode(path, code));
+
+    console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+    currentScope.functions.push(functionObject);
+    stack.push(functionObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling function declaration for ${getNodeName(
+        path.node
+      )}: ${error}`
+    );
+  }
 };
 
 const handleArrowOrFunctionExpression = (path, currentScope, stack, code) => {
-  if (path.parentPath.isClassProperty()) {
-    return;
+  try {
+    if (path.parentPath.isClassProperty()) {
+      return;
+    }
+
+    const nodeName = getNodeName(path.node);
+
+    const functionObject = createObject(nodeName, getSourceCode(path, code));
+
+    console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+    const newFunctionObject = replaceArrowFunctionVariableDeclaration(
+      currentScope,
+      nodeName,
+      functionObject
+    );
+
+    stack.push(newFunctionObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling arrow or function expression for ${getNodeName(
+        path.node
+      )}: ${error}`
+    );
   }
-
-  let functionName = null;
-  if (path.parent.type === "VariableDeclarator") {
-    functionName = path.parent.id.name; // Function assigned to variable
-  } else if (path.parent.type === "AssignmentExpression") {
-    functionName = path.parent.left.property.name; // Function assigned to property
-  }
-  const functionObject = createObject(functionName, getSourceCode(path, code));
-
-  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
-
-  const newFunctionObject = replaceArrowFunctionVariableDeclaration(
-    currentScope,
-    functionName,
-    functionObject
-  );
-
-  // currentScope.functions[functionName] = newFunctionObject;
-  stack.push(newFunctionObject);
 };
 
 const handleClassProperty = (path, currentScope, stack, code) => {
-  // Handle class properties assigned to functions
-  const functionName = path.node.key.name;
-  const functionObject = createObject(functionName, getSourceCode(path, code));
+  try {
+    // Handle class properties assigned to functions
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+    const functionObject = createObject(nodeName, getSourceCode(path, code));
 
-  currentScope.functions.push(functionObject);
-  stack.push(functionObject);
+    console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+    currentScope.functions.push(functionObject);
+    stack.push(functionObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling class property for ${getNodeName(path.node)}: ${error}`
+    );
+  }
 };
 
 const handleClassDeclaration = (path, currentScope, stack, code) => {
-  const className = path.node.id.name;
-  const classObject = createObject(className, getSourceCode(path, code));
+  try {
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${classObject.name} to ${currentScope.name}`);
+    const classObject = createObject(nodeName, getSourceCode(path, code));
 
-  currentScope.classes.push(classObject);
-  stack.push(classObject);
+    console.log(`Pushing ${classObject.name} to ${currentScope.name}`);
+
+    currentScope.classes.push(classObject);
+    stack.push(classObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling class declaration for ${getNodeName(path.node)}: ${error}`
+    );
+  }
 };
 
 const handleVariableArrowFunction = (path, currentScope, stack, code) => {
-  console.log("VARIABLE DEC ARROW FUNCTION OMITTED");
+  try {
+    console.log("VARIABLE DEC ARROW FUNCTION OMITTED");
 
-  const arrowFuncName = path.node.declarations[0].id.name;
-  const functionObject = createObject(arrowFuncName, getSourceCode(path, code));
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+    const functionObject = createObject(nodeName, getSourceCode(path, code));
 
-  currentScope.functions.push(functionObject);
-  // stack.push(functionObject);
+    console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
+
+    currentScope.functions.push(functionObject);
+
+    // Don't push to stack because it's a variable declaration for a function
+    // And we want to preserve this scope level in order to add the function itself
+    // to the appropriate scope level
+
+    // stack.push(functionObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling variable arrow function for ${getNodeName(
+        path.node
+      )}: ${error}`
+    );
+  }
 };
 
 const handleVariableDeclaration = (path, currentScope, stack, code) => {
-  const variableName = path.node.declarations[0].id.name;
-  const variableObject = createObject(variableName, getSourceCode(path, code));
+  try {
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${variableObject.name} to ${currentScope.name}`);
+    const variableObject = createObject(nodeName, getSourceCode(path, code));
 
-  currentScope.variables.push(variableObject);
+    console.log(`Pushing ${variableObject.name} to ${currentScope.name}`);
+
+    currentScope.variables.push(variableObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling variable declaration for ${getNodeName(
+        path.node
+      )}: ${error}`
+    );
+  }
 };
 
 const handleClassMethod = (path, currentScope, stack, code) => {
-  const methodName = path.node.key.name;
-  const methodObject = createObject(methodName, getSourceCode(path, code));
+  try {
+    const nodeName = getNodeName(path.node);
 
-  console.log(`Pushing ${methodObject.name} to ${currentScope.name}`);
+    const methodObject = createObject(nodeName, getSourceCode(path, code));
 
-  currentScope.functions.push(methodObject);
-  stack.push(methodObject);
+    console.log(`Pushing ${methodObject.name} to ${currentScope.name}`);
+
+    currentScope.functions.push(methodObject);
+    stack.push(methodObject);
+  } catch (error) {
+    logErrorRed(
+      `Error handling class method for ${getNodeName(path.node)}: ${error}`
+    );
+  }
 };
 
 function analyzeFile(ast, code, filePath) {
@@ -237,13 +324,9 @@ function analyzeFile(ast, code, filePath) {
     enter(path) {
       const currentScope = stack[stack.length - 1];
 
-      if (
-        path.isForStatement() ||
-        path.isIfStatement() ||
-        path.isWhileStatement() ||
-        path.isDoWhileStatement() ||
-        path.isCallExpression()
-      ) {
+      const isIgnoredPath = checkPathsToIgnore(path, currentScope, stack);
+
+      if (isIgnoredPath) {
         return;
       }
 
@@ -307,10 +390,6 @@ function analyzeFile(ast, code, filePath) {
 
   return result;
 }
-
-// const filePath = "../../../../iforager_react_native/App.js";
-// const filePath = "../../../../sample-react-project/src/App.js"; // Update this path
-// const filePath = "../../classes/documents/FileDocument.js"; // Update this path
 
 // console.log(JSON.stringify(result, null, 2));
 
