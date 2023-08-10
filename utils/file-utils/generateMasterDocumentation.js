@@ -15,7 +15,7 @@ const generateMasterDocumentation = async (files) => {
   const masterDocument = [];
 
   for (const file of files) {
-    if (file.endsWith(".js") && file.includes("App.js")) {
+    if (file.endsWith(".js")) {
       logYellow("Getting data for file:", file);
 
       try {
@@ -29,7 +29,7 @@ const generateMasterDocumentation = async (files) => {
           plugins: ["jsx"], // Include if you are using JSX
         });
 
-        const fileDocumentation = analyzeFile(ast, code);
+        const fileDocumentation = analyzeFile(ast, code, file);
 
         masterDocument.push(fileDocumentation);
       } catch (error) {

@@ -2,6 +2,10 @@ const fs = require("fs");
 const parser = require("@babel/parser");
 const traverse = require("@babel/traverse").default;
 const path = require("path");
+const {
+  logErrorRed,
+  logBgBlue,
+} = require("../../utils/console-utils/chalkUtils");
 
 function createObject(name, sourceCode) {
   return {
@@ -14,46 +18,74 @@ function createObject(name, sourceCode) {
   };
 }
 
-function updateFunctionObject(currentScope, functionName, functionObject) {
-  // Find the index of the function object with the matching name
-  const index = currentScope.functions.findIndex(
-    (func) => func.name === functionName
-  );
+const getNodeName = (node) => {
+  const nodeName =
+    node?.name ||
+    node?.key?.name ||
+    node?.id?.name ||
+    node?.left?.property?.name ||
+    (node?.declarations && node?.declarations[0]?.id?.name) ||
+    null;
 
-  const newFunctionObject = {
-    ...functionObject,
-    sourceCode:
-      index > -1
-        ? currentScope.functions[index].sourceCode
-        : functionObject.sourceCode,
-  };
+  logBgBlue(`Node name: ${nodeName}`);
 
-  // If the index is found, update the object at that index
-  if (index !== -1) {
-    currentScope.functions[index] = newFunctionObject;
-  } else {
-    // Optionally, you could handle the case where the function name is not found
-    currentScope.functions.push(newFunctionObject);
+  return nodeName;
+};
+
+function replaceArrowFunctionVariableDeclaration(
+  currentScope,
+  functionName,
+  functionObject
+) {
+  try {
+    // Find the index of the function object with the matching name
+    const index = currentScope.functions.findIndex(
+      (func) => func.name === functionName
+    );
+
+    const newFunctionObject = {
+      ...functionObject,
+      sourceCode:
+        index > -1
+          ? currentScope.functions[index].sourceCode
+          : functionObject.sourceCode,
+    };
+
+    // If the index is found, update the object at that index
+    if (index !== -1) {
+      currentScope.functions[index] = newFunctionObject;
+    } else {
+      // Optionally, you could handle the case where the function name is not found
+      currentScope.functions.push(newFunctionObject);
+    }
+
+    return newFunctionObject;
+  } catch (error) {
+    logErrorRed(
+      `Error replacing arrow function variable declaration for ${functionName}: ${error}`
+    );
   }
-
-  return newFunctionObject;
 }
 
 const getNodeToExtract = (path) => {
-  // Find the appropriate node to extract the source code from
-  let nodeToExtract = path.node;
+  try {
+    // Find the appropriate node to extract the source code from
+    let nodeToExtract = path.node;
 
-  if (path.isArrowFunctionExpression() || path.isFunctionExpression()) {
-    // If inside an assignment expression, use the ancestor node
-    const assignmentExpression = path.findParent((p) =>
-      p.isAssignmentExpression()
-    );
-    if (assignmentExpression) {
-      nodeToExtract = assignmentExpression.node;
+    if (path.isArrowFunctionExpression() || path.isFunctionExpression()) {
+      // If inside an assignment expression, use the ancestor node
+      const assignmentExpression = path.findParent((p) =>
+        p.isAssignmentExpression()
+      );
+      if (assignmentExpression) {
+        nodeToExtract = assignmentExpression.node;
+      }
     }
-  }
 
-  return nodeToExtract;
+    return nodeToExtract;
+  } catch (error) {
+    logErrorRed(`Error getting node to extract: ${error}`);
+  }
 };
 
 const getSourceCode = (path, code) => {
@@ -66,12 +98,14 @@ const getSourceCode = (path, code) => {
 };
 
 const handleComponentsDeclaration = (path, currentScope, stack, code) => {
+  const nodeName = getNodeName(path.node);
+
   if (
     (path.isArrowFunctionExpression() || path.isFunctionExpression()) &&
     path.node.body.type === "JSXElement"
   ) {
     // This is a React functional component
-    const componentName = getComponentName(path); // Implement this function to extract the name
+    const componentName = path.parent.id.name;
     const componentObject = createObject(
       componentName,
       getSourceCode(path, code)
@@ -125,7 +159,7 @@ const handleArrowOrFunctionExpression = (path, currentScope, stack, code) => {
 
   console.log(`Pushing ${functionObject.name} to ${currentScope.name}`);
 
-  const newFunctionObject = updateFunctionObject(
+  const newFunctionObject = replaceArrowFunctionVariableDeclaration(
     currentScope,
     functionName,
     functionObject
@@ -187,7 +221,7 @@ const handleClassMethod = (path, currentScope, stack, code) => {
   stack.push(methodObject);
 };
 
-function analyzeFile(ast, code) {
+function analyzeFile(ast, code, filePath) {
   const result = {
     name: filePath.split(path.sep).pop(),
     filepath: filePath,
@@ -203,17 +237,19 @@ function analyzeFile(ast, code) {
     enter(path) {
       const currentScope = stack[stack.length - 1];
 
-      const nodeName =
-        path.node?.name ||
-        path.node?.key?.name ||
-        path.node?.id?.name ||
-        path.node?.left?.property?.name ||
-        (path.node?.declarations && path.node?.declarations[0]?.id?.name) ||
-        null;
+      if (
+        path.isForStatement() ||
+        path.isIfStatement() ||
+        path.isWhileStatement() ||
+        path.isDoWhileStatement() ||
+        path.isCallExpression()
+      ) {
+        return;
+      }
 
-      console.log(stack.length, nodeName);
+      // console.log(stack.length, nodeName);
 
-      console.log(currentScope.name, path.node.type);
+      // console.log(currentScope.name, path.node.type);
 
       const isComponent = handleComponentsDeclaration(
         path,
@@ -274,32 +310,7 @@ function analyzeFile(ast, code) {
 
 // const filePath = "../../../../iforager_react_native/App.js";
 // const filePath = "../../../../sample-react-project/src/App.js"; // Update this path
-const filePath = "../../classes/documents/FileDocument.js"; // Update this path
-
-// const projectFilePath = path.join(__dirname, filePath);
-
-// const code = fs.readFileSync(projectFilePath, "utf-8");
-// const ast = parser.parse(code, {
-//   sourceType: "module",
-//   plugins: ["jsx"], // Include if you are using JSX
-// });
-
-// const result = analyzeFile(ast, code);
-
-// write to ../..//generated-documentation/generated-documentation.js
-// const resultString = JSON.stringify(result);
-
-// const resultStringWithExport = `module.exports = ${resultString}`;
-
-// const buffer = Buffer.from(resultStringWithExport);
-
-// fs.writeFileSync(
-//   path.join(
-//     __dirname,
-//     "../../generated-documentation/generated-documentation.js"
-//   ),
-//   buffer
-// );
+// const filePath = "../../classes/documents/FileDocument.js"; // Update this path
 
 // console.log(JSON.stringify(result, null, 2));
 
