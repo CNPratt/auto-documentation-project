@@ -3,7 +3,7 @@ const fs = require("fs");
 const parser = require("@babel/parser");
 
 const config = require("../../config");
-const analyzeFile = require("../../traversal-maps/codeblock-maps/test-option");
+const generateFile = require("../generation-utils/generateFile");
 
 const generateMasterDocumentation = async (files) => {
   logYellow("Getting file data");
@@ -29,7 +29,7 @@ const generateMasterDocumentation = async (files) => {
           plugins: ["jsx"], // Include if you are using JSX
         });
 
-        const fileDocumentation = analyzeFile(ast, code, file);
+        const fileDocumentation = generateFile(ast, code, file);
 
         masterDocument.push(fileDocumentation);
       } catch (error) {
