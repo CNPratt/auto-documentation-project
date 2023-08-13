@@ -43,7 +43,7 @@ const userInputSequence = async (documentation, prompt) => {
 
       shouldContinue = shouldSave;
     } else {
-      documentation.description = "This is a test description";
+      documentation.description = "";
       shouldContinue = true;
     }
   }

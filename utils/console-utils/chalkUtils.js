@@ -43,6 +43,21 @@ const logErrorRed = (message, secondaryMessage) =>
 const logErrorBgRed = (message, secondaryMessage) =>
   generateChalkLog("error", "bgRed", message, secondaryMessage);
 
+const logBgBlue = (message, secondaryMessage) =>
+  generateChalkLog("log", "bgBlue", message, secondaryMessage);
+
+const logBgGreen = (message, secondaryMessage) =>
+  generateChalkLog("log", "bgGreen", message, secondaryMessage);
+
+const logBgYellow = (message, secondaryMessage) =>
+  generateChalkLog("log", "bgYellow", message, secondaryMessage);
+
+const logBgMagenta = (message, secondaryMessage) =>
+  generateChalkLog("log", "bgMagenta", message, secondaryMessage);
+
+const logBgCyan = (message, secondaryMessage) =>
+  generateChalkLog("log", "bgCyan", message, secondaryMessage);
+
 const chalkUtils = {
   logGreen,
   logNativeGreen,
@@ -55,6 +70,11 @@ const chalkUtils = {
   logGray,
   logErrorRed,
   logErrorBgRed,
+  logBgBlue,
+  logBgGreen,
+  logBgYellow,
+  logBgMagenta,
+  logBgCyan,
 };
 
 module.exports = chalkUtils;

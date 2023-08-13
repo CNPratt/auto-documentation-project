@@ -1,7 +1,10 @@
 const { logYellow, logErrorRed } = require("../console-utils/chalkUtils");
-const FileDocument = require("../../classes/documents/FileDocument");
+const fs = require("fs");
+const parser = require("@babel/parser");
 
 const config = require("../../config");
+const generateFile = require("../generation-utils/generateFile");
+const getFileDescriptions = require("../generation-utils/getFileDescriptions");
 
 const generateMasterDocumentation = async (files) => {
   logYellow("Getting file data");
@@ -17,9 +20,19 @@ const generateMasterDocumentation = async (files) => {
       logYellow("Getting data for file:", file);
 
       try {
-        const fileDocumentation = new FileDocument(file);
+        // const fileDocumentation = new FileDocument(file);
 
-        await fileDocumentation.initializeFileData();
+        // await fileDocumentation.initializeFileData();
+
+        const code = fs.readFileSync(file, "utf-8");
+        const ast = parser.parse(code, {
+          sourceType: "module",
+          plugins: ["jsx"], // Include if you are using JSX
+        });
+
+        const fileDocumentation = generateFile(ast, code, file);
+
+        await getFileDescriptions(fileDocumentation);
 
         masterDocument.push(fileDocumentation);
       } catch (error) {
@@ -29,6 +42,7 @@ const generateMasterDocumentation = async (files) => {
       }
     }
   }
+
   return masterDocument;
 };
 
