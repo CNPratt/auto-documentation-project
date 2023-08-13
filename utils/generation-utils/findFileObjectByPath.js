@@ -1,7 +1,8 @@
 const pathUtil = require("path");
 const fs = require("fs");
+const { logGreen, logYellow } = require("../console-utils/chalkUtils.js");
 
-const findFileObjectByPath = (path) => {
+const findFileObjectByPath = (fileObject) => {
   let files = null;
 
   const objectivePath = pathUtil.join(
@@ -14,12 +15,14 @@ const findFileObjectByPath = (path) => {
   }
 
   if (files) {
-    const file = files.find((file) => file.filepath === path);
+    const file = files.find((file) => file.filepath === fileObject.filepath);
 
-    // console.log(file);
+    logGreen(`Found file object for ${fileObject.name}`);
 
     return file;
   }
+
+  logYellow(`No file object found for ${path}`);
 
   return null;
 };

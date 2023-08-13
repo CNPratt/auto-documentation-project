@@ -14,9 +14,15 @@ const handleArrowOrFunctionExpression = require("../../node-handlers/handleArrow
 const handleComponentsDeclaration = require("../../node-handlers/handleComponentsDeclaration");
 const checkPathsToIgnore = require("../../node-handlers/checkPathsToIgnore");
 const compareResultWithPreviousDocs = require("./compareResultWithPreviousDocs");
+const getHash = require("../file-utils/getHash");
+const {
+  logErrorRed,
+  logGreen,
+  logYellow,
+} = require("../console-utils/chalkUtils");
 
 function generateFile(ast, code, filePath) {
-  const result = {
+  let result = {
     name: filePath.split(pathUtil.sep).pop(),
     filepath: filePath,
     components: [],
@@ -24,6 +30,8 @@ function generateFile(ast, code, filePath) {
     functions: [],
     variables: [],
     arrayPath: [{ key: "root", scope: "root" }],
+    sourceCode: () => code,
+    sourceCodeHash: getHash(code),
   };
 
   const stack = [result];
@@ -129,15 +137,30 @@ function generateFile(ast, code, filePath) {
     },
   });
 
-  const previousFileObject = findFileObjectByPath(filePath);
+  let previousFileObject;
 
-  if (previousFileObject) {
-    compareResultWithPreviousDocs(result, previousFileObject);
+  try {
+    previousFileObject = findFileObjectByPath(result);
+
+    if (previousFileObject) {
+      if (previousFileObject.sourceCodeHash === result.sourceCodeHash) {
+        logGreen(`No changes detected for ${result.name}`);
+
+        result.description = previousFileObject.description;
+      } else {
+        logYellow(`Changes detected for ${result.name}`);
+        compareResultWithPreviousDocs(result, previousFileObject);
+      }
+    } else {
+      logYellow(`No previous docs found for ${result.name}`);
+    }
+  } catch (e) {
+    logErrorRed(
+      `Error getting previous file object for ${result.name}: ${e.message}`
+    );
   }
 
   return result;
 }
-
-// console.log(JSON.stringify(result, null, 2));
 
 module.exports = generateFile;

@@ -4,6 +4,7 @@ const parser = require("@babel/parser");
 
 const config = require("../../config");
 const generateFile = require("../generation-utils/generateFile");
+const getFileDescriptions = require("../generation-utils/getFileDescriptions");
 
 const generateMasterDocumentation = async (files) => {
   logYellow("Getting file data");
@@ -30,6 +31,8 @@ const generateMasterDocumentation = async (files) => {
         });
 
         const fileDocumentation = generateFile(ast, code, file);
+
+        await getFileDescriptions(fileDocumentation);
 
         masterDocument.push(fileDocumentation);
       } catch (error) {

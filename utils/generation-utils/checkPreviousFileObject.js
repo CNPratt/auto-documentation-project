@@ -24,6 +24,9 @@ const checkPreviousFileObject = (previousFileObject, original) => {
 
   if (foundObject) {
     logBgGreen(`Found object for ${original.name}: ${foundObject.name}`);
+
+    original.description = foundObject.description;
+
     return foundObject;
   } else {
     logBgYellow(`No previous data object found for ${original.name}`);
